@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "359415892921",
+    "project_id": "careq-12302",
+    "storage_bucket": "careq-12302.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:359415892921:android:79616345cfe5b3e0260468",
+        "android_client_info": {
+          "package_name": "com.example.care_q"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzPx2FycIbfVQh0IXBo_-K-Lts1mfXSd8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
