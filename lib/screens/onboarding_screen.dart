@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'home_screen.dart'; // Import your Home page
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -29,6 +30,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  // Animated navigation helper
+  void navigateToHome(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+        const HomeDashboardPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const beginOffset = Offset(1.0, 0.0);
+          const endOffset = Offset.zero;
+          final tween = Tween(begin: beginOffset, end: endOffset)
+              .chain(CurveTween(curve: Curves.easeInOut));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,9 +68,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: Alignment.centerRight,
                 child: _currentPage < 2
                     ? TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/auth');
-                  },
+                  onPressed: () => navigateToHome(context),
                   child: Text(
                     "Skip",
                     style: GoogleFonts.poppins(
@@ -59,6 +82,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
+            // Onboarding pages
             Expanded(
               child: PageView(
                 controller: _controller,
@@ -66,25 +90,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   OnboardPage(
                     image: 'assets/images/doc1.png',
                     title: "Quick Registration",
-                    subtitle: "Register patients in just a few taps and start consultations effortlessly.",
+                    subtitle:
+                    "Register patients in just a few taps and start consultations effortlessly.",
                     pageNumber: 1,
                   ),
                   OnboardPage(
                     image: 'assets/images/doc2.png',
                     title: "Smart Triage",
-                    subtitle: "AI helps prioritize patients based on urgency for faster care.",
+                    subtitle:
+                    "AI helps prioritize patients based on urgency for faster care.",
                     pageNumber: 2,
                   ),
                   OnboardPage(
                     image: 'assets/images/doc3.png',
                     title: "Real-Time Queue",
-                    subtitle: "Manage and track patient flow efficiently with live updates.",
+                    subtitle:
+                    "Manage and track patient flow efficiently with live updates.",
                     pageNumber: 3,
                   ),
                 ],
               ),
             ),
 
+            // Page indicator & Continue/Get Started button
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
               child: Column(
@@ -106,7 +134,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (_currentPage == 2) {
-                          Navigator.pushReplacementNamed(context, '/auth');
+                          navigateToHome(context); // Animated navigation
                         } else {
                           _controller.nextPage(
                             duration: const Duration(milliseconds: 400),
