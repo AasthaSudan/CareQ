@@ -1,5 +1,7 @@
+// lib/screens/splash_screen.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../config/theme.dart';
+import 'welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -9,151 +11,184 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with TickerProviderStateMixin {
-  late final AnimationController _entranceController;
-  late final Animation<double> _fadeAnimation;
-  late final Animation<double> _scaleAnimation;
-
-  late final AnimationController _pulseController;
-  late final Animation<double> _pulseAnimation;
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    _entranceController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+    // Initialize animation controller
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _entranceController, curve: Curves.easeIn),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1).animate(
-      CurvedAnimation(parent: _entranceController, curve: Curves.easeOutBack),
-    );
-    _entranceController.forward();
 
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    // Scale animation with elastic effect
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.elasticOut,
+      ),
     );
 
-    _entranceController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        Future.delayed(const Duration(seconds: 1), _navigateToOnboarding);
-      }
-    });
+    // Fade animation
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.5),
+      ),
+    );
+
+    // Start animation
+    _controller.forward();
+
+    // Navigate to welcome screen after delay
+    _navigateToWelcome();
   }
 
-  void _navigateToOnboarding() {
-    if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/onboarding');
+  Future<void> _navigateToWelcome() async {
+    await Future.delayed(const Duration(seconds: 3));
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+          const WelcomeScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(1.0, 0.0);
+            const end = Offset.zero;
+            const curve = Curves.easeInOut;
+
+            var tween = Tween(begin: begin, end: end).chain(
+              CurveTween(curve: curve),
+            );
+
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _entranceController.dispose();
-    _pulseController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final iconSize = size.shortestSide * 0.35;
-
     return Scaffold(
-      body: AnimatedContainer(
-        duration: const Duration(seconds: 2),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF6F7FF), Color(0xFFE7E3FF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+          gradient: PremiumTheme.purpleGradient,
         ),
         child: SafeArea(
           child: Center(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: _pulseAnimation.value,
-                          child: child,
-                        );
-                      },
-                      child: Container(
-                        width: iconSize,
-                        height: iconSize,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.deepPurple.withOpacity(0.1),
-                              blurRadius: 20,
-                              spreadRadius: 5,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.medical_services_rounded,
-                          size: 90,
-                          color: Color(0xFF7A5AF8),
-                        ),
-                      ),
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo container
+                        _buildLogoContainer(),
+                        const SizedBox(height: 40),
+                        // App title
+                        _buildAppTitle(),
+                        const SizedBox(height: 50),
+                        // Loading indicator
+                        _buildLoadingIndicator(),
+                      ],
                     ),
-                    const SizedBox(height: 40),
-                    Text(
-                      'CareSync',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF7A5AF8),
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Your smart healthcare companion',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 50),
-                    const CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor:
-                      AlwaysStoppedAnimation<Color>(Color(0xFF7A5AF8)),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Loading your wellness data...',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLogoContainer() {
+    return Container(
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.local_hospital,
+        size: 100,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildAppTitle() {
+    return Column(
+      children: const [
+        Text(
+          'Emergency',
+          style: TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 1,
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          'Triage System',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w300,
+            color: Colors.white,
+            letterSpacing: 2,
+          ),
+        ),
+        SizedBox(height: 10),
+        Text(
+          'AI-Powered Patient Care',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: Colors.white70,
+            letterSpacing: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return const SizedBox(
+      width: 40,
+      height: 40,
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        strokeWidth: 3,
       ),
     );
   }

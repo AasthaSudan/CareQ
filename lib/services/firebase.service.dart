@@ -1,373 +1,642 @@
+// lib/services/firebase_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/patient.model.dart';
-import '../models/triage.model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
+import '../models/patient_model.dart';
+import '../models/triage_model.dart';
 import '../models/room_model.dart';
 
+/// Custom exception for Firebase operations
+class FirebaseServiceException implements Exception {
+  final String message;
+  final String? code;
+  final dynamic originalError;
+
+  FirebaseServiceException(this.message, {this.code, this.originalError});
+
+  @override
+  String toString() => 'FirebaseServiceException: $message${code != null ? ' (Code: $code)' : ''}';
+}
+
 class FirebaseService {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  // Collection names as constants
+  static const String _patientsCollection = 'patients';
+  static const String _triageCollection = 'triage';
+  static const String _roomsCollection = 'rooms';
+
+  // ==================== AUTHENTICATION ====================
+
+  /// Authenticate user with email and password
+  ///
+  /// Throws [FirebaseServiceException] on authentication failure
+  Future<User?> signInWithEmailPassword(String email, String password) async {
+    try {
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      return userCredential.user;
+    } on FirebaseAuthException catch (e) {
+      throw FirebaseServiceException(
+        _getAuthErrorMessage(e.code),
+        code: e.code,
+        originalError: e,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error signing in: $e');
+      }
+      throw FirebaseServiceException(
+        'An unexpected error occurred during sign in',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Sign in anonymously (for quick patient registration)
+  ///
+  /// Throws [FirebaseServiceException] on authentication failure
+  Future<User?> signInAnonymously() async {
+    try {
+      final userCredential = await _auth.signInAnonymously();
+      return userCredential.user;
+    } on FirebaseAuthException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to sign in anonymously: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error signing in anonymously: $e');
+      }
+      throw FirebaseServiceException(
+        'An unexpected error occurred during anonymous sign in',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Sign out user
+  ///
+  /// Throws [FirebaseServiceException] on sign out failure
+  Future<void> signOut() async {
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error signing out: $e');
+      }
+      throw FirebaseServiceException(
+        'Failed to sign out',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Get current user
+  ///
+  /// Returns null if no user is signed in
+  User? getCurrentUser() {
+    return _auth.currentUser;
+  }
+
+  /// Stream of authentication state changes
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   // ==================== PATIENT OPERATIONS ====================
 
-  // Add new patient
+  /// Add new patient and return generated ID
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
   Future<String> addPatient(Patient patient) async {
     try {
-      DocumentReference docRef = await _firestore
-          .collection('patients')
+      final docRef = await _firestore
+          .collection(_patientsCollection)
           .add(patient.toFirestore());
+
+      if (kDebugMode) {
+        print('Patient added with ID: ${docRef.id}');
+      }
+
       return docRef.id;
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to add patient: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
     } catch (e) {
-      print('Error adding patient: $e');
-      rethrow;
+      if (kDebugMode) {
+        print('Error adding patient: $e');
+      }
+      throw FirebaseServiceException(
+        'An unexpected error occurred while adding patient',
+        originalError: e,
+      );
     }
   }
 
-  // Update patient
+  /// Update patient data
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
   Future<void> updatePatient(String patientId, Map<String, dynamic> data) async {
     try {
-      await _firestore.collection('patients').doc(patientId).update(data);
+      if (patientId.isEmpty) {
+        throw FirebaseServiceException('Patient ID cannot be empty');
+      }
+
+      // Add timestamp for tracking
+      final updateData = {
+        ...data,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await _firestore
+          .collection(_patientsCollection)
+          .doc(patientId)
+          .update(updateData);
+
+      if (kDebugMode) {
+        print('Patient updated: $patientId');
+      }
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to update patient: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
     } catch (e) {
-      print('Error updating patient: $e');
+      if (kDebugMode) {
+        print('Error updating patient: $e');
+      }
       rethrow;
     }
   }
 
-  // Get patient by ID
+  /// Get patient data by ID
+  ///
+  /// Returns null if patient not found
+  /// Throws [FirebaseServiceException] on operation failure
   Future<Patient?> getPatient(String patientId) async {
     try {
-      DocumentSnapshot doc = await _firestore
-          .collection('patients')
+      if (patientId.isEmpty) {
+        throw FirebaseServiceException('Patient ID cannot be empty');
+      }
+
+      final doc = await _firestore
+          .collection(_patientsCollection)
           .doc(patientId)
           .get();
 
-      if (doc.exists) {
-        return Patient.fromFirestore(doc);
+      if (!doc.exists) {
+        if (kDebugMode) {
+          print('Patient not found: $patientId');
+        }
+        return null;
       }
-      return null;
+
+      return Patient.fromFirestore(doc);
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to get patient: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
     } catch (e) {
-      print('Error getting patient: $e');
-      return null;
+      if (kDebugMode) {
+        print('Error getting patient: $e');
+      }
+      throw FirebaseServiceException(
+        'An unexpected error occurred while fetching patient',
+        originalError: e,
+      );
     }
   }
 
-  // Get all patients stream
+  /// Get all patients stream
   Stream<List<Patient>> getPatientsStream() {
     return _firestore
-        .collection('patients')
-        .orderBy('checkInTime', descending: true)
+        .collection(_patientsCollection)
+        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
         .map((doc) => Patient.fromFirestore(doc))
         .toList());
   }
 
+  /// Delete patient by ID
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
+  Future<void> deletePatient(String patientId) async {
+    try {
+      if (patientId.isEmpty) {
+        throw FirebaseServiceException('Patient ID cannot be empty');
+      }
+
+      await _firestore
+          .collection(_patientsCollection)
+          .doc(patientId)
+          .delete();
+
+      if (kDebugMode) {
+        print('Patient deleted: $patientId');
+      }
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to delete patient: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
+    }
+  }
+
   // ==================== TRIAGE OPERATIONS ====================
 
-  // Add triage record
+  /// Add new triage record and return generated ID
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
   Future<String> addTriage(Triage triage) async {
     try {
-      DocumentReference docRef = await _firestore
-          .collection('triage')
-          .add(triage.toFirestore());
+      final triageData = {
+        ...triage.toFirestore(),
+        'createdAt': FieldValue.serverTimestamp(),
+      };
 
-      // Update patient with priority
-      await updatePatient(triage.patientId, {'priority': triage.priority});
+      final docRef = await _firestore
+          .collection(_triageCollection)
+          .add(triageData);
+
+      if (kDebugMode) {
+        print('Triage added with ID: ${docRef.id}');
+      }
 
       return docRef.id;
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to add triage: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
     } catch (e) {
-      print('Error adding triage: $e');
-      rethrow;
+      if (kDebugMode) {
+        print('Error adding triage: $e');
+      }
+      throw FirebaseServiceException(
+        'An unexpected error occurred while adding triage',
+        originalError: e,
+      );
     }
   }
 
-  // Get triage by patient ID
-  Future<Triage?> getTriageByPatient(String patientId) async {
+  /// Get all triage records stream (queue)
+  ///
+  /// Returns stream of triage records ordered by priority
+  Stream<List<Triage>> getQueueStream() {
+    return _firestore
+        .collection(_triageCollection)
+        .orderBy('priority', descending: true)
+        .orderBy('createdAt')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+        .map((doc) => Triage.fromFirestore(doc))
+        .toList())
+        .handleError((error) {
+      if (kDebugMode) {
+        print('Error in queue stream: $error');
+      }
+    });
+  }
+
+  /// Get triage by ID
+  ///
+  /// Returns null if triage not found
+  /// Throws [FirebaseServiceException] on operation failure
+  Future<Triage?> getTriage(String triageId) async {
     try {
-      QuerySnapshot snapshot = await _firestore
-          .collection('triage')
-          .where('patientId', isEqualTo: patientId)
-          .limit(1)
+      if (triageId.isEmpty) {
+        throw FirebaseServiceException('Triage ID cannot be empty');
+      }
+
+      final doc = await _firestore
+          .collection(_triageCollection)
+          .doc(triageId)
           .get();
 
-      if (snapshot.docs.isNotEmpty) {
-        return Triage.fromFirestore(snapshot.docs.first);
+      if (!doc.exists) {
+        return null;
       }
-      return null;
-    } catch (e) {
-      print('Error getting triage: $e');
-      return null;
+
+      return Triage.fromFirestore(doc);
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to get triage: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
     }
   }
 
-  // Get queue stream (waiting patients with triage data)
-  Stream<List<Map<String, dynamic>>> getQueueStream() {
-    return _firestore
-        .collection('patients')
-        .where('status', isEqualTo: 'waiting')
-        .snapshots()
-        .asyncMap((patientSnapshot) async {
-      List<Map<String, dynamic>> queueData = [];
-
-      for (var patientDoc in patientSnapshot.docs) {
-        Patient patient = Patient.fromFirestore(patientDoc);
-
-        // Get triage data for this patient
-        Triage? triage = await getTriageByPatient(patient.id);
-
-        if (triage != null) {
-          queueData.add({
-            'patient': patient,
-            'triage': triage,
-          });
-        }
+  /// Get triage records for a specific patient
+  ///
+  /// Returns list of triage records ordered by most recent first
+  Future<List<Triage>> getTriageByPatient(String patientId) async {
+    try {
+      if (patientId.isEmpty) {
+        throw FirebaseServiceException('Patient ID cannot be empty');
       }
 
-      // Sort by priority (red > yellow > green), then by check-in time
-      queueData.sort((a, b) {
-        int priorityOrder(String priority) {
-          switch (priority) {
-            case 'red':
-              return 0;
-            case 'yellow':
-              return 1;
-            case 'green':
-              return 2;
-            default:
-              return 3;
-          }
-        }
+      final snapshot = await _firestore
+          .collection(_triageCollection)
+          .where('patientId', isEqualTo: patientId)
+          .orderBy('triageTime', descending: true)
+          .get();
 
-        Triage triageA = a['triage'] as Triage;
-        Triage triageB = b['triage'] as Triage;
+      return snapshot.docs
+          .map((doc) => Triage.fromFirestore(doc))
+          .toList();
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to get triage records: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
+    }
+  }
 
-        int priorityCompare = priorityOrder(triageA.priority)
-            .compareTo(priorityOrder(triageB.priority));
+  /// Update triage record
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
+  Future<void> updateTriage(String triageId, Map<String, dynamic> data) async {
+    try {
+      if (triageId.isEmpty) {
+        throw FirebaseServiceException('Triage ID cannot be empty');
+      }
 
-        if (priorityCompare != 0) return priorityCompare;
+      final updateData = {
+        ...data,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
 
-        // If same priority, sort by check-in time
-        Patient patientA = a['patient'] as Patient;
-        Patient patientB = b['patient'] as Patient;
-        return patientA.checkInTime.compareTo(patientB.checkInTime);
-      });
+      await _firestore
+          .collection(_triageCollection)
+          .doc(triageId)
+          .update(updateData);
 
-      return queueData;
-    });
+      if (kDebugMode) {
+        print('Triage updated: $triageId');
+      }
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to update triage: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
+    }
+  }
+
+  /// Delete triage record
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
+  Future<void> deleteTriage(String triageId) async {
+    try {
+      if (triageId.isEmpty) {
+        throw FirebaseServiceException('Triage ID cannot be empty');
+      }
+
+      await _firestore
+          .collection(_triageCollection)
+          .doc(triageId)
+          .delete();
+
+      if (kDebugMode) {
+        print('Triage deleted: $triageId');
+      }
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to delete triage: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
+    }
   }
 
   // ==================== ROOM OPERATIONS ====================
 
-  // Add new room
+  /// Add new room
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
   Future<String> addRoom(Room room) async {
     try {
-      DocumentReference docRef = await _firestore
-          .collection('rooms')
-          .add(room.toFirestore());
+      final roomData = {
+        ...room.toMap(),
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      final docRef = await _firestore
+          .collection(_roomsCollection)
+          .add(roomData);
+
+      if (kDebugMode) {
+        print('Room added with ID: ${docRef.id}');
+      }
+
       return docRef.id;
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to add room: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
     } catch (e) {
-      print('Error adding room: $e');
-      rethrow;
+      if (kDebugMode) {
+        print('Error adding room: $e');
+      }
+      throw FirebaseServiceException(
+        'An unexpected error occurred while adding room',
+        originalError: e,
+      );
     }
   }
 
-  // Update room
+  /// Update room
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
   Future<void> updateRoom(String roomId, Map<String, dynamic> data) async {
     try {
-      await _firestore.collection('rooms').doc(roomId).update(data);
+      if (roomId.isEmpty) {
+        throw FirebaseServiceException('Room ID cannot be empty');
+      }
+
+      final updateData = {
+        ...data,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await _firestore
+          .collection(_roomsCollection)
+          .doc(roomId)
+          .update(updateData);
+
+      if (kDebugMode) {
+        print('Room updated: $roomId');
+      }
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to update room: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
     } catch (e) {
-      print('Error updating room: $e');
+      if (kDebugMode) {
+        print('Error updating room: $e');
+      }
       rethrow;
     }
   }
 
-  // Get all rooms stream
+  /// Get room by ID
+  ///
+  /// Returns null if room not found
+  /// Throws [FirebaseServiceException] on operation failure
+  Future<Room?> getRoom(String roomId) async {
+    try {
+      if (roomId.isEmpty) {
+        throw FirebaseServiceException('Room ID cannot be empty');
+      }
+
+      final doc = await _firestore
+          .collection(_roomsCollection)
+          .doc(roomId)
+          .get();
+
+      if (!doc.exists) {
+        return null;
+      }
+
+      return Room.fromMap(doc.data()!, doc.id);
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to get room: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
+    }
+  }
+
+  /// Get all rooms stream
   Stream<List<Room>> getRoomsStream() {
     return _firestore
-        .collection('rooms')
+        .collection(_roomsCollection)
         .orderBy('roomNumber')
         .snapshots()
         .map((snapshot) => snapshot.docs
-        .map((doc) => Room.fromFirestore(doc))
-        .toList());
+        .map((doc) => Room.fromMap(doc.data(), doc.id))
+        .toList())
+        .handleError((error) {
+      if (kDebugMode) {
+        print('Error in rooms stream: $error');
+      }
+    });
   }
 
-  // Assign patient to room
-  Future<void> assignRoom(String patientId, String patientName, String roomId) async {
+  /// Delete room
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
+  Future<void> deleteRoom(String roomId) async {
     try {
-      // Update room
-      await updateRoom(roomId, {
-        'status': 'occupied',
-        'assignedPatientId': patientId,
-        'assignedPatientName': patientName,
-        'assignedTime': FieldValue.serverTimestamp(),
-      });
+      if (roomId.isEmpty) {
+        throw FirebaseServiceException('Room ID cannot be empty');
+      }
 
-      // Update patient
-      await updatePatient(patientId, {
-        'status': 'in-treatment',
-        'assignedRoom': roomId,
-      });
-    } catch (e) {
-      print('Error assigning room: $e');
-      rethrow;
+      await _firestore
+          .collection(_roomsCollection)
+          .doc(roomId)
+          .delete();
+
+      if (kDebugMode) {
+        print('Room deleted: $roomId');
+      }
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to delete room: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
     }
   }
 
-  // Discharge patient from room
-  Future<void> dischargePatient(String patientId, String roomId) async {
-    try {
-      // Update patient
-      await updatePatient(patientId, {
-        'status': 'discharged',
-      });
+  // ==================== STORAGE OPERATIONS ====================
 
-      // Clear room
-      await updateRoom(roomId, {
-        'status': 'available',
-        'assignedPatientId': null,
-        'assignedPatientName': null,
-        'assignedTime': null,
-      });
-    } catch (e) {
-      print('Error discharging patient: $e');
-      rethrow;
+  /// Upload file to Firebase Storage
+  ///
+  /// Returns download URL of uploaded file
+  /// Throws [FirebaseServiceException] on operation failure
+  Future<String> uploadFile(File file, String path) async {
+    try {
+      final ref = _storage.ref().child(path);
+      final uploadTask = await ref.putFile(file);
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+      if (kDebugMode) {
+        print('File uploaded: $path');
+      }
+
+      return downloadUrl;
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to upload file: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
     }
   }
 
-  // ==================== STATISTICS ====================
-
-  // Get statistics
-  Future<Map<String, int>> getStatistics() async {
+  /// Delete file from Firebase Storage
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
+  Future<void> deleteFile(String path) async {
     try {
-      // Get all patients
-      QuerySnapshot patientsSnapshot = await _firestore
-          .collection('patients')
-          .get();
+      final ref = _storage.ref().child(path);
+      await ref.delete();
 
-      int total = patientsSnapshot.docs.length;
-      int waiting = 0;
-      int inTreatment = 0;
-      int discharged = 0;
-
-      for (var doc in patientsSnapshot.docs) {
-        String status = doc.get('status') ?? 'waiting';
-        if (status == 'waiting') waiting++;
-        if (status == 'in-treatment') inTreatment++;
-        if (status == 'discharged') discharged++;
+      if (kDebugMode) {
+        print('File deleted: $path');
       }
-
-      // Get triage counts
-      QuerySnapshot triageSnapshot = await _firestore
-          .collection('triage')
-          .get();
-
-      int critical = 0;
-      int urgent = 0;
-      int nonUrgent = 0;
-
-      for (var doc in triageSnapshot.docs) {
-        String priority = doc.get('priority') ?? 'green';
-        if (priority == 'red') critical++;
-        if (priority == 'yellow') urgent++;
-        if (priority == 'green') nonUrgent++;
-      }
-
-      // Get room counts
-      QuerySnapshot roomsSnapshot = await _firestore
-          .collection('rooms')
-          .get();
-
-      int totalRooms = roomsSnapshot.docs.length;
-      int occupiedRooms = roomsSnapshot.docs
-          .where((doc) => doc.get('status') == 'occupied')
-          .length;
-
-      return {
-        'totalPatients': total,
-        'waiting': waiting,
-        'inTreatment': inTreatment,
-        'discharged': discharged,
-        'critical': critical,
-        'urgent': urgent,
-        'nonUrgent': nonUrgent,
-        'totalRooms': totalRooms,
-        'occupiedRooms': occupiedRooms,
-        'availableRooms': totalRooms - occupiedRooms,
-      };
-    } catch (e) {
-      print('Error getting statistics: $e');
-      return {};
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to delete file: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
     }
   }
 
-  // ==================== UTILITIES ====================
+  // ==================== HELPER METHODS ====================
 
-  // Initialize demo rooms
-  Future<void> initializeRooms() async {
-    try {
-      QuerySnapshot existing = await _firestore.collection('rooms').get();
-      if (existing.docs.isNotEmpty) {
-        print('Rooms already initialized');
-        return;
-      }
-
-      List<Map<String, dynamic>> rooms = [
-        {
-          'roomName': 'Emergency Room 1',
-          'roomNumber': 'ER-01',
-          'status': 'available',
-          'specialty': 'general',
-        },
-        {
-          'roomName': 'Emergency Room 2',
-          'roomNumber': 'ER-02',
-          'status': 'available',
-          'specialty': 'general',
-        },
-        {
-          'roomName': 'Cardiac Unit 1',
-          'roomNumber': 'CU-01',
-          'status': 'available',
-          'specialty': 'cardiac',
-        },
-        {
-          'roomName': 'Trauma Room 1',
-          'roomNumber': 'TR-01',
-          'status': 'available',
-          'specialty': 'trauma',
-        },
-        {
-          'roomName': 'Observation Room 1',
-          'roomNumber': 'OB-01',
-          'status': 'available',
-          'specialty': 'observation',
-        },
-        {
-          'roomName': 'Observation Room 2',
-          'roomNumber': 'OB-02',
-          'status': 'available',
-          'specialty': 'observation',
-        },
-        {
-          'roomName': 'Pediatric Room 1',
-          'roomNumber': 'PD-01',
-          'status': 'available',
-          'specialty': 'pediatric',
-        },
-        {
-          'roomName': 'Pediatric Room 2',
-          'roomNumber': 'PD-02',
-          'status': 'available',
-          'specialty': 'pediatric',
-        },
-      ];
-
-      for (var room in rooms) {
-        await _firestore.collection('rooms').add(room);
-      }
-
-      print('Rooms initialized successfully');
-    } catch (e) {
-      print('Error initializing rooms: $e');
+  /// Get user-friendly error message for Firebase Auth errors
+  String _getAuthErrorMessage(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'No user found with this email address';
+      case 'wrong-password':
+        return 'Incorrect password';
+      case 'invalid-email':
+        return 'Invalid email address';
+      case 'user-disabled':
+        return 'This account has been disabled';
+      case 'too-many-requests':
+        return 'Too many failed attempts. Please try again later';
+      case 'operation-not-allowed':
+        return 'This sign-in method is not enabled';
+      default:
+        return 'Authentication failed. Please try again';
     }
   }
 }

@@ -1,46 +1,57 @@
-// import 'dart:math';
-// import 'package:flutter/material.dart';
-//
-// class AIPriorityService {
-//   // Main AI prediction method
-//   static Map<String, dynamic> predictPriority({
-//     required int age,
-//     required int pulse,
-//     required String bloodPressure,
-//     required double temperature,
-//     required int oxygenLevel,
-//     required List<String> symptoms,
-//   }) {
-//     // Calculate comprehensive risk score (0-100)
-//     double riskScore = 0;
-//     List<String> riskFactors = [];
-//
-//     // Age-based risk
-//     if (age > 70) {
-//       riskScore += 18;
-//       riskFactors.add('Advanced age (>70)');
-//     } else if (age > 60) {
-//       riskScore += 12;
-//       riskFactors.add('Elderly patient (>60)');
-//     } else if (age < 2) {
-//       riskScore += 22;
-//       riskFactors.add('Infant patient (<2)');
-//     } else if (age < 12) {
-//       riskScore += 8;
-//       riskFactors.add('Pediatric patient');
-//     }
-//
-//     // Pulse risk analysis
-//     if (pulse > 140) {
-//       riskScore += 25;
-//       riskFactors.add('Severe tachycardia (>140 bpm)');
-//     } else if (pulse > 120) {
-//       riskScore += 18;
-//       riskFactors.add('Tachycardia (>120 bpm)');
-//     } else if (pulse > 100) {
-//       riskScore += 10;
-//       riskFactors.add('Elevated heart rate (>100 bpm)');
-//     } else if (pulse < 45) {
-//       riskScore += 22;
-//       riskFactors.add('Severe bradycardia (<45 bpm)');
-//     } else if (pulse < 55) {
+import 'dart:math';
+
+class AIService {
+  // Simulate AI analysis based on patient's symptoms and vital signs
+  Map<String, dynamic> analyzePriority(Map<String, dynamic> vitals, List<String> symptoms) {
+    double riskScore = _calculateRiskScore(vitals, symptoms);
+    String priority = _assignPriority(riskScore);
+
+    return {
+      'riskScore': riskScore,
+      'priority': priority,
+      'confidence': Random().nextInt(40) + 60, // Simulating AI confidence (60-100%)
+      'riskFactors': _identifyRiskFactors(vitals, symptoms),
+    };
+  }
+
+  // Calculate a risk score (simplified for this example)
+  double _calculateRiskScore(Map<String, dynamic> vitals, List<String> symptoms) {
+    double score = 0.0;
+    if (vitals['bp'] < 90 || vitals['bp'] > 140) score += 20;
+    if (vitals['pulse'] < 60 || vitals['pulse'] > 100) score += 15;
+    if (vitals['temp'] > 38) score += 25;
+    if (vitals['oxygen'] < 95) score += 20;
+
+    // Add additional score for critical symptoms
+    if (symptoms.contains('chest pain')) score += 30;
+    if (symptoms.contains('shortness of breath')) score += 25;
+
+    return score;
+  }
+
+  // Assign priority based on the risk score
+  String _assignPriority(double riskScore) {
+    if (riskScore > 60) {
+      return 'red';
+    } else if (riskScore > 30) {
+      return 'yellow';
+    } else {
+      return 'green';
+    }
+  }
+
+  // Identify risk factors
+  List<String> _identifyRiskFactors(Map<String, dynamic> vitals, List<String> symptoms) {
+    List<String> riskFactors = [];
+
+    if (vitals['bp'] < 90 || vitals['bp'] > 140) riskFactors.add('Abnormal Blood Pressure');
+    if (vitals['pulse'] < 60 || vitals['pulse'] > 100) riskFactors.add('Abnormal Pulse');
+    if (vitals['temp'] > 38) riskFactors.add('High Fever');
+    if (vitals['oxygen'] < 95) riskFactors.add('Low Oxygen Levels');
+
+    if (symptoms.contains('chest pain')) riskFactors.add('Chest Pain');
+    if (symptoms.contains('shortness of breath')) riskFactors.add('Shortness of Breath');
+
+    return riskFactors;
+  }
+}
