@@ -8,7 +8,6 @@ import '../config/theme.dart';
 import '../services/ai_priority_service.dart';
 import '../models/triage_model.dart';
 import '../providers/patient_provider.dart';
-import 'patient_dashboard_screen.dart';
 
 class AIAnalysisScreen extends StatefulWidget {
   final Map<String, dynamic> vitals;
@@ -363,6 +362,3 @@ class _AIAnalysisScreenState extends State<AIAnalysisScreen>
     );
   }
 }
-
-// ==================== PATIENT DASHBOARD SCREEN ====================
-// lib/screens/patient_dashboard_screen.dart
