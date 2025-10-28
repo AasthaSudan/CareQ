@@ -11,7 +11,7 @@ class PatientQueueStatusScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<PatientProvider>(context);
-    final patient = provider.patient;
+    final patient = provider.currentPatient;
 
     // No patient loaded scenario
     if (patient == null) {
@@ -92,7 +92,7 @@ class PatientQueueStatusScreen extends StatelessWidget {
   }
 
   Widget _buildVitals(PatientProvider provider) {
-    final vitals = provider.patient?.vitals ?? {};
+    final vitals = provider.currentPatient?.vitals ?? {};
     return Card(
       elevation: 4,
       child: Padding(
@@ -113,8 +113,8 @@ class PatientQueueStatusScreen extends StatelessWidget {
   }
 
   Widget _buildAssignedDoctor(PatientProvider provider) {
-    final doctor = provider.patient?.assignedDoctor ?? 'Not assigned';
-    final room = provider.patient?.assignedRoom ?? 'Not assigned';
+    final doctor = provider.currentPatient?.assignedDoctor ?? 'Not assigned';
+    final room = provider.currentPatient?.assignedRoom ?? 'Not assigned';
     return Card(
       elevation: 4,
       child: Padding(
@@ -132,7 +132,7 @@ class PatientQueueStatusScreen extends StatelessWidget {
   }
 
   Widget _buildAIAnalysis(PatientProvider provider) {
-    final ai = provider.patient?.aiAnalysis ?? {};
+    final ai = provider.currentPatient?.aiAnalysis ?? {};
     final priority = ai['priority'] ?? 'Not analyzed';
     final riskScore = ai['riskScore'] ?? 0;
     final riskFactors = List<String>.from(ai['riskFactors'] ?? []);

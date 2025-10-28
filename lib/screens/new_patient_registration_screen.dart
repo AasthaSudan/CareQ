@@ -1,6 +1,7 @@
 // lib/screens/new_patient_registration_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/patient_model.dart';
 import '../providers/patient_provider.dart';
@@ -20,12 +21,12 @@ class _NewPatientRegistrationScreenState
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  // Controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _emergencyContactController = TextEditingController();
+  final TextEditingController _emergencyContactController =
+  TextEditingController();
 
   String _gender = 'Male';
   String? _patientId;
@@ -43,27 +44,32 @@ class _NewPatientRegistrationScreenState
 
   @override
   Widget build(BuildContext context) {
+    final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+
     return Scaffold(
       backgroundColor: PremiumTheme.backgroundLight,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildProgressBar(),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (page) => setState(() => _currentPage = page),
-                children: [
-                  _buildPage1(),
-                  _buildPage2(),
-                  _buildPage3(),
-                ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              _buildHeader(),
+              _buildProgressBar(),
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onPageChanged: (page) => setState(() => _currentPage = page),
+                  children: [
+                    _buildPage1(),
+                    _buildPage2(),
+                    _buildPage3(),
+                  ],
+                ),
               ),
-            ),
-            _buildContinueButton(),
-          ],
+              _buildContinueButton(() => _handleContinue(patientProvider)),
+            ],
+          ),
         ),
       ),
     );
@@ -90,10 +96,7 @@ class _NewPatientRegistrationScreenState
           const Expanded(
             child: Text(
               'New Patient Registration',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -123,82 +126,169 @@ class _NewPatientRegistrationScreenState
     );
   }
 
-  Widget _buildPage1() {
-    return Form(
-      key: _formKey,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildPage1() => SingleChildScrollView(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildPageTitle('Personal', 'Information'),
+        const SizedBox(height: 40),
+        _buildTextField(
+          controller: _nameController,
+          label: 'Full Name',
+          icon: Icons.person_outline,
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) {
+              return 'Please enter patient name';
+            }
+            if (v.trim().length < 2) {
+              return 'Name must be at least 2 characters';
+            }
+            return null;
+          },
+          textCapitalization: TextCapitalization.words,
+        ),
+        const SizedBox(height: 20),
+        Row(
           children: [
-            _buildPageTitle('Personal', 'Information'),
-            const SizedBox(height: 40),
-            _buildTextField(
-              controller: _nameController,
-              label: 'Full Name',
-              icon: Icons.person_outline,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter patient name';
-                }
-                if (value.trim().length < 2) {
-                  return 'Name must be at least 2 characters';
-                }
-                return null;
-              },
-              textCapitalization: TextCapitalization.words,
+            Expanded(
+              child: _buildTextField(
+                controller: _ageController,
+                label: 'Age',
+                icon: Icons.cake_outlined,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(3),
+                ],
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Required';
+                  final age = int.tryParse(v);
+                  if (age == null || age < 0 || age > 150) {
+                    return 'Invalid age';
+                  }
+                  return null;
+                },
+              ),
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _ageController,
-                    label: 'Age',
-                    icon: Icons.cake_outlined,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(3),
-                    ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Required';
-                      }
-                      final age = int.tryParse(value);
-                      if (age == null || age < 0 || age > 150) {
-                        return 'Invalid age';
-                      }
-                      return null;
-                    },
+            const SizedBox(width: 16),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _gender,
+                decoration: InputDecoration(
+                  labelText: 'Gender',
+                  prefixIcon: const Icon(Icons.wc),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _gender,
-                    decoration: InputDecoration(
-                      labelText: 'Gender',
-                      prefixIcon: const Icon(Icons.wc),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    items: ['Male', 'Female', 'Other']
-                        .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                        .toList(),
-                    onChanged: (value) => setState(() => _gender = value!),
-                  ),
-                ),
-              ],
+                items: ['Male', 'Female', 'Other']
+                    .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                    .toList(),
+                onChanged: (value) => setState(() => _gender = value!),
+              ),
             ),
           ],
         ),
+      ],
+    ),
+  );
+
+  Widget _buildPage2() => SingleChildScrollView(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildPageTitle('Contact', 'Details'),
+        const SizedBox(height: 40),
+        _buildTextField(
+          controller: _contactController,
+          label: 'Contact Number',
+          icon: Icons.phone_outlined,
+          keyboardType: TextInputType.phone,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          validator: (v) {
+            if (v == null || v.isEmpty) return 'Required';
+            if (v.length < 10) return 'Enter valid number';
+            return null;
+          },
+        ),
+        const SizedBox(height: 20),
+        _buildTextField(
+          controller: _addressController,
+          label: 'Address',
+          icon: Icons.home_outlined,
+          maxLines: 2,
+          validator: (v) {
+            if (v == null || v.isEmpty) return 'Required';
+            return null;
+          },
+          textCapitalization: TextCapitalization.sentences,
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildPage3() => SingleChildScrollView(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildPageTitle('Emergency', 'Contact'),
+        const SizedBox(height: 40),
+        _buildTextField(
+          controller: _emergencyContactController,
+          label: 'Emergency Contact Number',
+          icon: Icons.warning_amber_rounded,
+          keyboardType: TextInputType.phone,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          validator: (v) {
+            if (v == null || v.isEmpty) return 'Required';
+            if (v.length < 10) return 'Enter valid number';
+            return null;
+          },
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildPageTitle(String t1, String t2) => Row(
+    children: [
+      Text(
+        '$t1 ',
+        style: const TextStyle(
+            fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
       ),
-    );
-  }
+      Text(
+        t2,
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: PremiumTheme.primaryPurple,
+        ),
+      ),
+    ],
+  );
+
+  Widget _buildContinueButton(VoidCallback onPressed) => Padding(
+    padding: const EdgeInsets.all(24),
+    child: SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: PremiumTheme.primaryPurple,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12)),
+        ),
+        child: const Text('Continue',
+            style: TextStyle(fontSize: 16, color: Colors.white)),
+      ),
+    ),
+  );
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -209,103 +299,101 @@ class _NewPatientRegistrationScreenState
     String? Function(String?)? validator,
     int maxLines = 1,
     TextCapitalization textCapitalization = TextCapitalization.none,
-  }) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+  }) =>
+      TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          errorMaxLines: 2,
         ),
-        filled: true,
-        fillColor: Colors.white,
-        errorMaxLines: 2,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        validator: validator,
+        maxLines: maxLines,
+        textCapitalization: textCapitalization,
+      );
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
+        ],
       ),
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      validator: validator,
-      maxLines: maxLines,
-      textCapitalization: textCapitalization,
     );
   }
 
   Future<void> _handleContinue(PatientProvider provider) async {
-    // Validate current page
-    if (_currentPage == 0 || _currentPage == 1) {
-      if (!_formKey.currentState!.validate()) {
-        return;
-      }
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     if (_currentPage < 2) {
-      // Go to next page
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-    } else {
-      // Register patient
-      try {
-        Patient patient = Patient(
-          id: '',
-          name: _nameController.text.trim(),
-          age: int.parse(_ageController.text),
-          gender: _gender,
-          contact: _contactController.text.trim(),
-          address: _addressController.text.trim(),
-          chiefComplaint: '',
-          checkInTime: DateTime.now(),
-          status: 'registering',
-          priority: 'green',
-        );
+      return;
+    }
 
-        String? patientId = await provider.registerPatient(patient);
+    try {
+      final patient = Patient(
+        id: '',
+        name: _nameController.text.trim(),
+        age: int.parse(_ageController.text),
+        gender: _gender,
+        contact: _contactController.text.trim(),
+        address: _addressController.text.trim(),
+        chiefComplaint: '',
+        checkInTime: DateTime.now(),
+        status: 'registering',
+        priority: 'green',
+      );
 
-        if (patientId != null) {
-          _patientId = patientId;
+      final patientId = await provider.addPatient(patient);
 
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: const [
-                    Icon(Icons.check_circle, color: Colors.white),
-                    SizedBox(width: 12),
-                    Text('Patient registered successfully!'),
-                  ],
-                ),
-                backgroundColor: Colors.green,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            );
-
-            await Future.delayed(const Duration(milliseconds: 500));
-
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => SymptomsRecorderScreen(
-                    patientId: patientId,
-                  ),
-                ),
-              );
-            }
-          }
-        } else {
-          if (mounted) {
-            _showErrorDialog('Failed to register patient. Please try again.');
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          _showErrorDialog('An error occurred: ${e.toString()}');
-        }
+      if (patientId == null) {
+        _showErrorDialog('Failed to register patient. Please try again.');
+        return;
       }
+
+      _patientId = patientId;
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Patient registered successfully!'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SymptomsRecorderScreen(patientId: patientId),
+        ),
+      );
+    } catch (e) {
+      _showErrorDialog('An error occurred: $e');
     }
   }
 }

@@ -61,7 +61,7 @@ class _ExistingPatientSearchScreenState extends State<ExistingPatientSearchScree
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const SymptomsRecorderScreen(),
+                      builder: (_) => const SymptomsRecorderScreen(patientId: '',),
                     ),
                   );
                 },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Displays various styles of status indicators (dot, badge, chip, outlined)
 class StatusIndicator extends StatelessWidget {
   final String status;
   final double size;
@@ -16,6 +17,7 @@ class StatusIndicator extends StatelessWidget {
     this.style = StatusStyle.dot,
   });
 
+  // Get color based on status
   Color getStatusColor() {
     switch (status.toLowerCase()) {
       case 'available':
@@ -43,6 +45,7 @@ class StatusIndicator extends StatelessWidget {
     }
   }
 
+  // Label to display beside indicator
   String getStatusLabel() {
     switch (status.toLowerCase()) {
       case 'available':
@@ -87,6 +90,8 @@ class StatusIndicator extends StatelessWidget {
     }
   }
 
+  // --- STYLE VARIANTS ---
+
   Widget _buildDotStyle(Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -95,20 +100,9 @@ class StatusIndicator extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             if (showPulse)
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 1500),
-                repeat: true,
-                builder: (context, value, child) {
-                  return Container(
-                    width: size * (1 + value * 0.8),
-                    height: size * (1 + value * 0.8),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.3 * (1 - value)),
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                },
+              _PulseAnimation(
+                color: color,
+                size: size,
               ),
             Container(
               width: size,
@@ -253,14 +247,59 @@ class StatusIndicator extends StatelessWidget {
   }
 }
 
-enum StatusStyle {
-  dot,      // Simple dot with optional label
-  badge,    // Rounded rectangle with background
-  chip,     // Solid color chip
-  outlined, // Outlined border style
+// --- PULSE ANIMATION (replaces the invalid `repeat` param) ---
+class _PulseAnimation extends StatefulWidget {
+  final Color color;
+  final double size;
+
+  const _PulseAnimation({required this.color, required this.size});
+
+  @override
+  State<_PulseAnimation> createState() => _PulseAnimationState();
 }
 
-// Preset status widgets
+class _PulseAnimationState extends State<_PulseAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(); // Loop animation forever
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final value = _controller.value;
+        return Container(
+          width: widget.size * (1 + value * 0.8),
+          height: widget.size * (1 + value * 0.8),
+          decoration: BoxDecoration(
+            color: widget.color.withOpacity(0.3 * (1 - value)),
+            shape: BoxShape.circle,
+          ),
+        );
+      },
+    );
+  }
+}
+
+// --- ENUM & PRESET STATUS COMPONENTS ---
+
+enum StatusStyle { dot, badge, chip, outlined }
+
 class OnlineStatus extends StatelessWidget {
   final bool isOnline;
   final bool showPulse;

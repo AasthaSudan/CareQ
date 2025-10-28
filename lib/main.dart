@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'screens/splash_screen.dart';
+import 'providers/patient_provider.dart';
+import 'firebase_options.dart'; // only if you used FlutterFire CLI
 import 'screens/welcome_screen.dart';
-import 'providers/patient_provider.dart'; // Make sure you import the patient provider
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform, // use this if you have firebase_options.dart
+  );
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PatientProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -14,20 +25,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<PatientProvider>(
-      create: (context) => PatientProvider(), // Provide the PatientProvider here
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Emergency Triage',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        initialRoute: '/splash', // Always start with SplashScreen
-        routes: {
-          '/splash': (context) => const SplashScreen(),
-          '/welcome': (context) => const WelcomeScreen(),
-        },
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Care Q',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const WelcomeScreen(),
     );
   }
 }

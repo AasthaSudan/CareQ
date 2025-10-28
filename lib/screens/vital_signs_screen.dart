@@ -21,7 +21,8 @@ class _VitalSignsScreenState extends State<VitalSignsScreen> {
   @override
   void initState() {
     super.initState();
-    final patient = Provider.of<PatientProvider>(context, listen: false).patient;
+    final patient =
+        Provider.of<PatientProvider>(context, listen: false).currentPatient;
     if (patient != null && patient.vitals.isNotEmpty) {
       _bpController.text = patient.vitals['bp'] ?? '';
       _pulseController.text = patient.vitals['pulse']?.toString() ?? '';
@@ -47,16 +48,59 @@ class _VitalSignsScreenState extends State<VitalSignsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Please enter your', style: TextStyle(fontSize: 24, color: PremiumTheme.textGray)),
-            const Text('vital signs', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: PremiumTheme.primaryPurple)),
+            const Text(
+              'Please enter your',
+              style: TextStyle(fontSize: 24, color: PremiumTheme.textGray),
+            ),
+            const Text(
+              'vital signs',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: PremiumTheme.primaryPurple,
+              ),
+            ),
             const SizedBox(height: 32),
-            _buildVitalInputCard(Icons.favorite, 'Blood Pressure', 'mmHg', '120/80', _bpController, PremiumTheme.pinkGradient),
+            _buildVitalInputCard(
+              Icons.favorite,
+              'Blood Pressure',
+              'mmHg',
+              '120/80',
+              _bpController,
+              PremiumTheme.pinkGradient,
+            ),
             const SizedBox(height: 16),
-            _buildVitalInputCard(Icons.monitor_heart, 'Pulse Rate', 'BPM', '72', _pulseController, PremiumTheme.purpleGradient, keyboardType: TextInputType.number),
+            _buildVitalInputCard(
+              Icons.monitor_heart,
+              'Pulse Rate',
+              'BPM',
+              '72',
+              _pulseController,
+              PremiumTheme.purpleGradient,
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 16),
-            _buildVitalInputCard(Icons.thermostat, 'Temperature', '°F', '98.6', _tempController, PremiumTheme.blueGradient, keyboardType: TextInputType.number),
+            _buildVitalInputCard(
+              Icons.thermostat,
+              'Temperature',
+              '°F',
+              '98.6',
+              _tempController,
+              PremiumTheme.blueGradient,
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 16),
-            _buildVitalInputCard(Icons.air, 'Oxygen Level', '%', '98', _oxygenController, const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]), keyboardType: TextInputType.number),
+            _buildVitalInputCard(
+              Icons.air,
+              'Oxygen Level',
+              '%',
+              '98',
+              _oxygenController,
+              const LinearGradient(
+                colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+              ),
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
@@ -65,9 +109,14 @@ class _VitalSignsScreenState extends State<VitalSignsScreen> {
                 onPressed: _analyzeVitals,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: PremiumTheme.primaryPurple,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
-                child: const Text('Analyze with AI', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Analyze with AI',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],
@@ -76,7 +125,15 @@ class _VitalSignsScreenState extends State<VitalSignsScreen> {
     );
   }
 
-  Widget _buildVitalInputCard(IconData icon, String title, String unit, String hint, TextEditingController controller, LinearGradient gradient, {TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildVitalInputCard(
+      IconData icon,
+      String title,
+      String unit,
+      String hint,
+      TextEditingController controller,
+      LinearGradient gradient, {
+        TextInputType keyboardType = TextInputType.text,
+      }) {
     return VitalInputCard(
       icon: icon,
       title: title,
@@ -89,22 +146,44 @@ class _VitalSignsScreenState extends State<VitalSignsScreen> {
   }
 
   void _analyzeVitals() {
-    if (_bpController.text.isEmpty || _pulseController.text.isEmpty || _tempController.text.isEmpty || _oxygenController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all vital signs')));
+    if (_bpController.text.isEmpty ||
+        _pulseController.text.isEmpty ||
+        _tempController.text.isEmpty ||
+        _oxygenController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all vital signs')),
+      );
       return;
     }
 
     final provider = Provider.of<PatientProvider>(context, listen: false);
+    final patient = provider.currentPatient;
+
+    if (patient == null || patient.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No patient found.')),
+      );
+      return;
+    }
+
     final vitalsMap = {
       'bp': _bpController.text,
-      'pulse': int.parse(_pulseController.text),
-      'temperature': double.parse(_tempController.text),
-      'oxygen': int.parse(_oxygenController.text),
+      'pulse': int.tryParse(_pulseController.text) ?? 0,
+      'temperature': double.tryParse(_tempController.text) ?? 0.0,
+      'oxygen': int.tryParse(_oxygenController.text) ?? 0,
     };
 
-    provider.updateVitals(vitalsMap);  // No need to use `.then()`
+    provider.updateVitals(patient.id!, vitalsMap);
 
-    // Navigate directly to AI Analysis Screen
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AIAnalysisScreen()));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AIAnalysisScreen(
+          patientId: patient.id!,
+          vitals: vitalsMap,
+          symptoms: const [],
+        ),
+      ),
+    );
   }
 }

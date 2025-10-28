@@ -83,6 +83,8 @@ class FirebaseService {
     }
   }
 
+
+
   /// Sign out user
   ///
   /// Throws [FirebaseServiceException] on sign out failure
@@ -427,6 +429,7 @@ class FirebaseService {
     }
   }
 
+
   // ==================== ROOM OPERATIONS ====================
 
   /// Add new room
@@ -546,6 +549,13 @@ class FirebaseService {
     });
   }
 
+  Future<void> updateVitals({
+    required String patientId,
+    required Map<String, dynamic> vitals,
+  }) async {
+    await updatePatientVitals(patientId, vitals);
+  }
+
   /// Delete room
   ///
   /// Throws [FirebaseServiceException] on operation failure
@@ -617,6 +627,46 @@ class FirebaseService {
       );
     }
   }
+
+  /// ✅ Update only the vitals of a patient
+  ///
+  /// Throws [FirebaseServiceException] on operation failure
+  Future<void> updatePatientVitals(String patientId, Map<String, dynamic> vitals) async {
+    try {
+      if (patientId.isEmpty) {
+        throw FirebaseServiceException('Patient ID cannot be empty');
+      }
+
+      final updateData = {
+        'vitals': vitals,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await _firestore
+          .collection(_patientsCollection)
+          .doc(patientId)
+          .update(updateData);
+
+      if (kDebugMode) {
+        print('Patient vitals updated for: $patientId');
+      }
+    } on FirebaseException catch (e) {
+      throw FirebaseServiceException(
+        'Failed to update patient vitals: ${e.message}',
+        code: e.code,
+        originalError: e,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating patient vitals: $e');
+      }
+      throw FirebaseServiceException(
+        'An unexpected error occurred while updating patient vitals',
+        originalError: e,
+      );
+    }
+  }
+
 
   // ==================== HELPER METHODS ====================
 

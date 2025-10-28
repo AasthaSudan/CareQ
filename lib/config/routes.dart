@@ -8,6 +8,7 @@ import '../screens/ai_analysis_screen.dart';
 import '../screens/patient_queue_status_screen.dart';
 import '../screens/room_assignment_screen.dart';
 import '../screens/discharge_summary_screen.dart';
+import '../screens/vital_signs_screen.dart';
 import '../screens/welcome_screen.dart';
 
 
@@ -32,8 +33,8 @@ class AppRoutes {
     existingPatient: (_) => const ExistingPatientSearchScreen(),
     documentUpload: (_) => const DocumentUploadScreen(),
     vitalSigns: (_) => const VitalSignsScreen(),
-    symptoms: (_) => const SymptomsRecorderScreen(),
-    aiAnalysis: (_) => const AIAnalysisScreen(vitals: {},),
+    symptoms: (_) => const SymptomsRecorderScreen(patientId: '',),
+    aiAnalysis: (_) => const AIAnalysisScreen(vitals: {}, patientId: '', symptoms: [],),
     queueStatus: (_) => const PatientQueueStatusScreen(),
     roomAssignment: (_) => const RoomAssignmentScreen(),
     dischargeSummary: (_) => const DischargeSummaryScreen(),
