@@ -1,273 +1,203 @@
+// lib/screens/vital_signs_screen.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/patient_provider.dart';
+import 'ai_analysis_screen.dart';
 
-class PremiumTheme {
-  // Primary Colors (Matching Reference UI)
-  static const Color primaryPurple = Color(0xFF7A5AF8);
-  static const Color secondaryPurple = Color(0xFF9A4DFF);
-  static const Color accentPink = Color(0xFFFF4081);
+class VitalSignsScreen extends StatefulWidget {
+  final String patientId;
 
-  // Background Colors
-  static const Color backgroundLight = Color(0xFFF5F7FA);
-  static const Color cardWhite = Color(0xFFFFFFFF);
+  const VitalSignsScreen({super.key, required this.patientId});
 
-  // Text Colors
-  static const Color textDark = Color(0xFF2D3436);
-  static const Color textGray = Color(0xFFB0BEC5);
-  static const Color textLight = Color(0xFF636E72);
+  @override
+  State<VitalSignsScreen> createState() => _VitalSignsScreenState();
+}
 
-  // Status Colors
-  static const Color successGreen = Color(0xFF28A745);
-  static const Color warningOrange = Color(0xFFFFC107);
-  static const Color errorRed = Color(0xFFEF5350);
-  static const Color infoBlue = Color(0xFF4C83FF);
+class _VitalSignsScreenState extends State<VitalSignsScreen>
+    with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
+  final _bpController = TextEditingController();
+  final _pulseController = TextEditingController();
+  final _tempController = TextEditingController();
+  final _oxygenController = TextEditingController();
 
-  // Gradients (Matching Reference UI)
-  static const LinearGradient purpleGradient = LinearGradient(
-    colors: [Color(0xFF7A5AF8), Color(0xFF9A4DFF)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  double _progress = 0.33;
+  bool _isAnalyzing = false;
+  bool _showContinue = false;
 
-  static const LinearGradient blueGradient = LinearGradient(
-    colors: [Color(0xFF4C83FF), Color(0xFF6CB0F5)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  @override
+  void dispose() {
+    _bpController.dispose();
+    _pulseController.dispose();
+    _tempController.dispose();
+    _oxygenController.dispose();
+    super.dispose();
+  }
 
-  static const LinearGradient pinkGradient = LinearGradient(
-    colors: [Color(0xFFFF4081), Color(0xFFFF80AB)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  Future<void> _submitVitals(BuildContext context) async {
+    if (!_formKey.currentState!.validate()) return;
 
-  static const LinearGradient greenGradient = LinearGradient(
-    colors: [Color(0xFF28A745), Color(0xFF5CB85C)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+    final vitals = {
+      'bp': _bpController.text,
+      'pulse': _pulseController.text,
+      'temperature': _tempController.text,
+      'oxygen': _oxygenController.text,
+    };
 
-  // Shadows
-  static List<BoxShadow> cardShadow = [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.08),
-      blurRadius: 20,
-      offset: const Offset(0, 10),
-      spreadRadius: -5,
-    ),
-  ];
+    setState(() {
+      _isAnalyzing = true;
+      _progress = 0.66;
+    });
 
-  static List<BoxShadow> buttonShadow = [
-    BoxShadow(
-      color: primaryPurple.withOpacity(0.3),
-      blurRadius: 15,
-      offset: const Offset(0, 8),
-      spreadRadius: -3,
-    ),
-  ];
+    await Future.delayed(const Duration(seconds: 1)); // mimic processing
+    setState(() {
+      _isAnalyzing = false;
+      _showContinue = true;
+      _progress = 1.0;
+    });
+  }
 
-  static List<BoxShadow> softShadow = [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.05),
-      blurRadius: 10,
-      offset: const Offset(0, 4),
-      spreadRadius: -2,
-    ),
-  ];
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final patientProvider = Provider.of<PatientProvider>(context);
+    final patient = patientProvider.currentPatient;
 
-  // Theme Data
-  static ThemeData lightTheme = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.light,
-    primaryColor: primaryPurple,
-    scaffoldBackgroundColor: backgroundLight,
-
-    colorScheme: const ColorScheme.light(
-      primary: primaryPurple,
-      secondary: secondaryPurple,
-      surface: cardWhite,
-      error: errorRed,
-    ),
-
-    textTheme: GoogleFonts.poppinsTextTheme().copyWith(
-      displayLarge: GoogleFonts.poppins(
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
-        color: textDark,
-      ),
-      displayMedium: GoogleFonts.poppins(
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-        color: textDark,
-      ),
-      displaySmall: GoogleFonts.poppins(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        color: textDark,
-      ),
-      headlineMedium: GoogleFonts.poppins(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: textDark,
-      ),
-      titleLarge: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: textDark,
-      ),
-      bodyLarge: GoogleFonts.poppins(
-        fontSize: 16,
-        color: textDark,
-      ),
-      bodyMedium: GoogleFonts.poppins(
-        fontSize: 14,
-        color: textGray,
-      ),
-      labelLarge: GoogleFonts.poppins(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: Colors.white,
-      ),
-    ),
-
-    appBarTheme: AppBarTheme(
-      elevation: 0,
-      centerTitle: false,
-      backgroundColor: Colors.transparent,
-      foregroundColor: textDark,
-      titleTextStyle: GoogleFonts.poppins(
-        fontSize: 24,
-        fontWeight: FontWeight.bold,
-        color: textDark,
-      ),
-    ),
-
-    cardTheme: CardThemeData(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      color: cardWhite,
-    ),
-
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: cardWhite,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: primaryPurple, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: errorRed, width: 2),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      hintStyle: GoogleFonts.poppins(
-        color: textGray,
-        fontSize: 14,
-      ),
-    ),
-
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        backgroundColor: primaryPurple,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Record Vital Signs'),
+        backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
-        textStyle: GoogleFonts.poppins(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+        elevation: 0,
+      ),
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // Step Progress
+            LinearProgressIndicator(
+              value: _progress,
+              backgroundColor: Colors.grey.shade200,
+              color: theme.colorScheme.primary,
+              minHeight: 6,
+            ),
+            const SizedBox(height: 24),
+
+            Expanded(
+              child: _isAnalyzing
+                  ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(strokeWidth: 5),
+                  const SizedBox(height: 20),
+                  Text(
+                    "Analyzing vital signs...",
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ],
+              )
+                  : _showContinue
+                  ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle,
+                      color: theme.colorScheme.primary, size: 70),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Vitals recorded successfully!",
+                    style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AIAnalysisScreen(
+                            patientId: widget.patientId,
+                            vitals: {
+                              'bp': _bpController.text,
+                              'pulse': _pulseController.text,
+                              'temperature': _tempController.text,
+                              'oxygen': _oxygenController.text,
+                            },
+                            symptoms: const {},
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 40, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      "Continue",
+                      style: TextStyle(
+                          fontSize: 16, color: Colors.white),
+                    ),
+                  ),
+                ],
+              )
+                  : Form(
+                key: _formKey,
+                child: ListView(
+                  children: [
+                    _buildTextField(
+                        _bpController, "Blood Pressure (mmHg)"),
+                    _buildTextField(
+                        _pulseController, "Pulse Rate (bpm)"),
+                    _buildTextField(
+                        _tempController, "Temperature (°C)"),
+                    _buildTextField(
+                        _oxygenController, "Oxygen Level (%)"),
+                    const SizedBox(height: 30),
+                    ElevatedButton(
+                      onPressed: () => _submitVitals(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 14, horizontal: 40),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        "Analyze",
+                        style: TextStyle(
+                            fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-    ),
-
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: primaryPurple,
-      foregroundColor: Colors.white,
-      elevation: 4,
-    ),
-  );
-
-  // Button Text Style
-  static TextStyle buttonText = GoogleFonts.poppins(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  );
-
-  // Neumorphic Effect
-  static BoxDecoration neumorphic({bool pressed = false}) {
-    return BoxDecoration(
-      color: backgroundLight,
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: pressed
-          ? [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          offset: const Offset(2, 2),
-          blurRadius: 5,
-        ),
-      ]
-          : [
-        BoxShadow(
-          color: Colors.white,
-          offset: const Offset(-5, -5),
-          blurRadius: 10,
-        ),
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          offset: const Offset(5, 5),
-          blurRadius: 10,
-        ),
-      ],
     );
   }
 
-  // Glass Effect
-  static BoxDecoration glassEffect({Color? color}) {
-    return BoxDecoration(
-      color: (color ?? Colors.white).withOpacity(0.1),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(
-        color: Colors.white.withOpacity(0.2),
-        width: 1.5,
+  Widget _buildTextField(TextEditingController controller, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        validator: (value) =>
+        value == null || value.isEmpty ? 'Please enter $label' : null,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 10,
-          spreadRadius: -2,
-        ),
-      ],
-    );
-  }
-
-  // Card Decoration
-  static BoxDecoration cardDecoration({Color? color}) {
-    return BoxDecoration(
-      color: color ?? cardWhite,
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: cardShadow,
-    );
-  }
-
-  // Gradient Button Decoration
-  static BoxDecoration gradientButton(LinearGradient gradient) {
-    return BoxDecoration(
-      gradient: gradient,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: buttonShadow,
     );
   }
 }
