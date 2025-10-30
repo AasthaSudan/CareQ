@@ -1,258 +1,133 @@
-import 'package:flutter/foundation.dart';
+// lib/providers/patient_provider.dart
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/patient_model.dart';
-import '../models/triage_model.dart';
-import '../services/firebase.service.dart';
+import 'package:path/path.dart' as p;
 
-class PatientProvider with ChangeNotifier {
-  final FirebaseService _firebaseService = FirebaseService();
+class PatientProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  List<Patient> _patients = [];
-  List<Triage> _triageRecords = [];
-  bool _isLoading = false;
-  String? _error;
+  // Local cache of patients (small)
+  final List<PatientModel> _patients = [];
+  final List<PatientModel> _queue = [];
+  bool _loading = false;
 
-  // ✅ Added current patient field and getter
-  Patient? _currentPatient;
-  Patient? get currentPatient => _currentPatient;
+  bool get loading => _loading;
+  List<PatientModel> get patients => List.unmodifiable(_patients);
+  List<PatientModel> get queue => List.unmodifiable(_queue);
 
-  void setCurrentPatient(Patient patient) {
-    _currentPatient = patient;
-    notifyListeners();
+  PatientProvider() {
+    // Optionally fetch initial data
+    fetchPatients();
   }
 
-  List<Patient> get patients => _patients;
-  List<Triage> get triageRecords => _triageRecords;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
-
-  /// Fetch all patients from Firebase
   Future<void> fetchPatients() async {
-    _isLoading = true;
-    _error = null;
+    _loading = true;
     notifyListeners();
-
     try {
-      final snapshot = await _firestore.collection('patients').get();
-      _patients = snapshot.docs.map((doc) => Patient.fromFirestore(doc)).toList();
-      _error = null;
+      final snapshot = await _firestore.collection('patients').orderBy('name').get();
+      _patients.clear();
+      for (final doc in snapshot.docs) {
+        _patients.add(PatientModel.fromMap(doc.data(), doc.id));
+      }
+      // Build queue as all patients for demo; adapt logic as needed
+      _queue
+        ..clear()
+        ..addAll(_patients);
     } catch (e) {
-      _error = e.toString();
-      _patients = [];
+      debugPrint('fetchPatients error: $e');
     } finally {
-      _isLoading = false;
+      _loading = false;
       notifyListeners();
     }
   }
 
-  /// Get a specific patient by ID
-  Future<Patient?> getPatient(String patientId) async {
+  Future<PatientModel?> registerPatient({
+    required String name,
+    required String gender,
+    int? age,
+    String? phone,
+    String? address,
+    String? symptoms,
+    String? emergencyLevel,
+  }) async {
+    final data = {
+      'name': name,
+      'gender': gender,
+      'age': age,
+      'phone': phone,
+      'address': address,
+      'symptoms': symptoms,
+      'emergencyLevel': emergencyLevel,
+      'createdAt': FieldValue.serverTimestamp(),
+    };
     try {
-      // First check if patient is already in local list
-      try {
-        final existingPatient = _patients.firstWhere((p) => p.id == patientId);
-        return existingPatient;
-      } catch (e) {
-        // Patient not found in local list, fetch from Firebase
-      }
-
-      // Fetch from Firebase
-      final doc = await _firestore.collection('patients').doc(patientId).get();
-
-      if (doc.exists) {
-        return Patient.fromFirestore(doc);
-      }
-
-      return null;
+      final docRef = await _firestore.collection('patients').add(data);
+      final doc = await docRef.get();
+      final pModel = PatientModel.fromMap(doc.data()!, doc.id);
+      _patients.add(pModel);
+      _queue.add(pModel);
+      notifyListeners();
+      return pModel;
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      debugPrint('registerPatient error: $e');
       return null;
     }
   }
 
-  /// Add a new patient to Firebase
-  Future<String?> addPatient(Patient patient) async {
+  Future<bool> addVitals(String patientId, Map<String, dynamic> vitals) async {
     try {
-      final patientId = await _firebaseService.addPatient(patient);
-
-      // Add to local list with the generated ID
-      final newPatient = patient.copyWith(id: patientId);
-
-      _patients.add(newPatient);
-      notifyListeners();
-
-      return patientId;
-    } on FirebaseServiceException catch (e) {
-      _error = e.message;
-      notifyListeners();
-      return null;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return null;
-    }
-  }
-
-  /// Update an existing patient
-  Future<bool> updatePatient(String patientId, Map<String, dynamic> updates) async {
-    try {
-      await _firebaseService.updatePatient(patientId, updates);
-
-      // Update local list
-      final index = _patients.indexWhere((p) => p.id == patientId);
-      if (index != -1) {
-        // Fetch updated patient data
-        final updatedPatient = await getPatient(patientId);
-        if (updatedPatient != null) {
-          _patients[index] = updatedPatient;
-        }
+      await _firestore.collection('patients').doc(patientId).update({'vitals': vitals});
+      // update local caches
+      final idx = _patients.indexWhere((p) => p.id == patientId);
+      if (idx >= 0) {
+        final map = _patients[idx].toMap();
+        map['vitals'] = vitals;
+        _patients[idx] = PatientModel.fromMap(map, patientId);
       }
-
-      notifyListeners();
-      return true;
-    } on FirebaseServiceException catch (e) {
-      _error = e.message;
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  /// Delete a patient
-  Future<bool> deletePatient(String patientId) async {
-    try {
-      await _firestore.collection('patients').doc(patientId).delete();
-
-      _patients.removeWhere((p) => p.id == patientId);
+      final qIdx = _queue.indexWhere((p) => p.id == patientId);
+      if (qIdx >= 0) {
+        final map = _queue[qIdx].toMap();
+        map['vitals'] = vitals;
+        _queue[qIdx] = PatientModel.fromMap(map, patientId);
+      }
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      debugPrint('addVitals error: $e');
       return false;
     }
   }
 
-  /// Add a triage record for a patient
-  Future<String?> addTriageRecord(Triage triage) async {
+  Future<List<String>?> uploadReport(File file, String patientId) async {
     try {
-      final triageId = await _firebaseService.addTriage(triage);
+      final filename = '${DateTime.now().millisecondsSinceEpoch}_${p.basename(file.path)}';
+      final ref = _storage.ref().child('reports/$patientId/$filename');
+      final uploadTask = await ref.putFile(file);
+      final url = await uploadTask.ref.getDownloadURL();
 
-      final newTriage = triage.copyWith(id: triageId);
-      _triageRecords.add(newTriage);
-      notifyListeners();
+      await _firestore.collection('patients').doc(patientId).update({
+        'reports': FieldValue.arrayUnion([url]),
+      });
 
-      return triageId;
-    } on FirebaseServiceException catch (e) {
-      _error = e.message;
-      notifyListeners();
-      return null;
+      // update local copy
+      await fetchPatients();
+      return [url];
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      debugPrint('uploadReport error: $e');
       return null;
     }
   }
 
-  /// Fetch triage records for a specific patient
-  Future<List<Triage>> getPatientTriageRecords(String patientId) async {
-    try {
-      final snapshot = await _firestore
-          .collection('triage')
-          .where('patientId', isEqualTo: patientId)
-          .orderBy('triageTime', descending: true)
-          .get();
-
-      return snapshot.docs.map((doc) => Triage.fromFirestore(doc)).toList();
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return [];
-    }
+  Future<void> refreshQueue() async {
+    await fetchPatients();
   }
 
-  /// Fetch all triage records
-  Future<void> fetchAllTriageRecords() async {
-    _isLoading = true;
-    _error = null;
+  Future<void> removeFromQueue(String patientId) async {
+    _queue.removeWhere((p) => p.id == patientId);
     notifyListeners();
-
-    try {
-      final snapshot = await _firestore
-          .collection('triage')
-          .orderBy('triageTime', descending: true)
-          .get();
-
-      _triageRecords = snapshot.docs.map((doc) => Triage.fromFirestore(doc)).toList();
-      _error = null;
-    } catch (e) {
-      _error = e.toString();
-      _triageRecords = [];
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// ✅ Updated vitals method to use correct FirebaseService function
-  Future<bool> updateVitals(String patientId, Map<String, dynamic> vitals) async {
-    try {
-      await _firebaseService.updatePatientVitals(patientId, vitals);
-
-      final index = _patients.indexWhere((p) => p.id == patientId);
-      if (index != -1) {
-        final updatedPatient = await getPatient(patientId);
-        if (updatedPatient != null) {
-          _patients[index] = updatedPatient;
-        }
-      }
-
-      notifyListeners();
-      return true;
-    } on FirebaseServiceException catch (e) {
-      _error = e.message;
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  List<Patient> getPatientsByPriority(String priority) {
-    return _patients.where((p) => p.priority == priority).toList();
-  }
-
-  List<Patient> getPatientsByStatus(String status) {
-    return _patients.where((p) => p.status == status).toList();
-  }
-
-  List<Patient> searchPatients(String query) {
-    if (query.isEmpty) return _patients;
-
-    final lowerQuery = query.toLowerCase();
-    return _patients
-        .where((p) =>
-    p.name.toLowerCase().contains(lowerQuery) ||
-        p.contact.contains(query))
-        .toList();
-  }
-
-  void clearError() {
-    _error = null;
-    notifyListeners();
-  }
-
-  Future<void> refresh() async {
-    await Future.wait([
-      fetchPatients(),
-      fetchAllTriageRecords(),
-    ]);
   }
 }
