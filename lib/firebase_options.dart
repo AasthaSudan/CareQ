@@ -72,7 +72,7 @@ class DefaultFirebaseOptions {
     appId: '1:359415892921:ios:c838df8c6ed1de1e260468',
     messagingSenderId: '359415892921',
     projectId: 'careq-12302',
-    storageBucket: 'careq-12302.firebasestorage.app',
+    storageBucket: 'careq-12302.appspot.com',
     iosBundleId: 'com.example.careq',
   );
 
