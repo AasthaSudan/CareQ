@@ -1,22 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class StatItem extends StatelessWidget {
-  final IconData icon;
-  final String value;
   final String label;
-  final Color color;
+  final String value;
+  final Color? color;
 
-  const StatItem({Key? key, required this.icon, required this.value, required this.label, this.color = Colors.white}) : super(key: key);
+  const StatItem({
+    required this.label,
+    required this.value,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      Icon(icon, color: color, size: 26),
-      const SizedBox(height: 8),
-      Text(value, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-      const SizedBox(height: 6),
-      Text(label, style: GoogleFonts.inter(fontSize: 12, color: color.withOpacity(0.9))),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
   }
 }

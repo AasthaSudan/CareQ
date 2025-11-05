@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:care_q/models/vital_signs.dart';
 
 class PatientModel {
   final String id;
@@ -9,10 +9,15 @@ class PatientModel {
   final String address;
   final String emergencyLevel;
   final String symptoms;
-  final String? photoUrl;
-  final Map<String, dynamic> vitals;
+  final Map<String, bool> symptomChecks;  // Changed to Map<String, bool>
+  final VitalSigns vitals;
   final List<String> reports;
-  final Timestamp createdAt;
+  final String? photoUrl;
+  final DateTime createdAt;
+  final DateTime registrationTime;
+  final String status;
+  String? room;
+  String priority;
 
   PatientModel({
     required this.id,
@@ -23,13 +28,18 @@ class PatientModel {
     required this.address,
     required this.emergencyLevel,
     required this.symptoms,
-    required this.photoUrl,
+    required this.symptomChecks,
     required this.vitals,
     required this.reports,
+    this.photoUrl,
     required this.createdAt,
+    required this.registrationTime,
+    required this.status,
+    this.room,
+    required this.priority,
   });
 
-  /// Create a modified copy of the patient
+  // CopyWith method for updating fields in an existing PatientModel
   PatientModel copyWith({
     String? id,
     String? name,
@@ -39,10 +49,15 @@ class PatientModel {
     String? address,
     String? emergencyLevel,
     String? symptoms,
-    String? photoUrl,
-    Map<String, dynamic>? vitals,
+    Map<String, bool>? symptomChecks,  // Make sure this is optional
+    VitalSigns? vitals,
     List<String>? reports,
-    Timestamp? createdAt,
+    String? photoUrl,
+    DateTime? createdAt,
+    DateTime? registrationTime,
+    String? status,
+    String? room,
+    String? priority,
   }) {
     return PatientModel(
       id: id ?? this.id,
@@ -53,43 +68,60 @@ class PatientModel {
       address: address ?? this.address,
       emergencyLevel: emergencyLevel ?? this.emergencyLevel,
       symptoms: symptoms ?? this.symptoms,
-      photoUrl: photoUrl ?? this.photoUrl,
+      symptomChecks: symptomChecks ?? this.symptomChecks,  // Default to current symptomChecks if not provided
       vitals: vitals ?? this.vitals,
       reports: reports ?? this.reports,
+      photoUrl: photoUrl ?? this.photoUrl,
       createdAt: createdAt ?? this.createdAt,
+      registrationTime: registrationTime ?? this.registrationTime,
+      status: status ?? this.status,
+      room: room ?? this.room,
+      priority: priority ?? this.priority,
     );
   }
 
-  /// Convert patient data to Firestore map
-  Map<String, dynamic> toMap() => {
-    'name': name,
-    'age': age,
-    'gender': gender,
-    'phone': phone,
-    'address': address,
-    'emergencyLevel': emergencyLevel,
-    'symptoms': symptoms,
-    'photoUrl': photoUrl,
-    'vitals': vitals,
-    'reports': reports,
-    'createdAt': createdAt,
-  };
-
-  /// Create PatientModel from Firestore document
+  // From Map method to create a PatientModel from a Firestore document
   factory PatientModel.fromMap(Map<String, dynamic> map, String id) {
     return PatientModel(
       id: id,
-      name: map['name'] ?? '',
-      age: map['age'] ?? 0,
-      gender: map['gender'] ?? '',
-      phone: map['phone'] ?? '',
-      address: map['address'] ?? '',
-      emergencyLevel: map['emergencyLevel'] ?? 'Low',
-      symptoms: map['symptoms'] ?? '',
-      photoUrl: map['photoUrl'],
-      vitals: Map<String, dynamic>.from(map['vitals'] ?? {}),
+      name: map['name'],
+      age: map['age'],
+      gender: map['gender'],
+      phone: map['phone'],
+      address: map['address'],
+      emergencyLevel: map['emergencyLevel'],
+      symptoms: map['symptoms'],
+      symptomChecks: Map<String, bool>.from(map['symptomChecks']),
+      vitals: VitalSigns.fromMap(map['vitals']),
       reports: List<String>.from(map['reports'] ?? []),
-      createdAt: map['createdAt'] ?? Timestamp.now(),
+      photoUrl: map['photoUrl'],
+      createdAt: map['createdAt'].toDate(),
+      registrationTime: map['registrationTime']?.toDate(),
+      status: map['status'],
+      room: map['room'],
+      priority: map['priority'] ?? 'stable',
     );
+  }
+
+  // To Map method for converting a PatientModel into a Firestore document
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'age': age,
+      'gender': gender,
+      'phone': phone,
+      'address': address,
+      'emergencyLevel': emergencyLevel,
+      'symptoms': symptoms,
+      'symptomChecks': symptomChecks,
+      'vitals': vitals.toMap(),
+      'reports': reports,
+      'photoUrl': photoUrl,
+      'createdAt': createdAt,
+      'registrationTime': registrationTime,
+      'status': status,
+      'room': room,
+      'priority': priority,
+    };
   }
 }

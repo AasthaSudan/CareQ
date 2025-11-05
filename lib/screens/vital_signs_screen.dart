@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/patient_provider.dart';
 import '../models/patient_model.dart';
+import '../models/vital_signs.dart'; // Import VitalSigns model
 
 class VitalSignsScreen extends StatefulWidget {
   final String patientId;
@@ -28,18 +29,22 @@ class _VitalSignsScreenState extends State<VitalSignsScreen> {
     final provider = Provider.of<PatientProvider>(context, listen: false);
 
     try {
-      final vitals = {
-        'bp': _bpController.text.trim(),
-        'pulse': _pulseController.text.trim(),
-        'temp': _tempController.text.trim(),
-        'spo2': _spo2Controller.text.trim(),
-        'updatedAt': Timestamp.now(),
-      };
+      // Create a VitalSigns object
+      final vitals = VitalSigns(
+        bloodPressure: double.tryParse(_bpController.text.trim()),
+        pulse: double.tryParse(_pulseController.text.trim()),
+        temperature: double.tryParse(_tempController.text.trim()),
+        spO2: double.tryParse(_spo2Controller.text.trim()),
+      );
 
+      // Update Firestore with the new vitals
       await FirebaseFirestore.instance
           .collection('patients')
           .doc(widget.patientId)
-          .update({'vitals': vitals});
+          .update({
+        'vitals': vitals.toMap(),
+        'updatedAt': Timestamp.now(), // This stores the current time
+      });
 
       // Update local cache in provider
       final idx = provider.patients.indexWhere((p) => p.id == widget.patientId);
@@ -87,9 +92,12 @@ class _VitalSignsScreenState extends State<VitalSignsScreen> {
         emergencyLevel: 'Low',
         symptoms: '',
         photoUrl: null,
-        vitals: {},
+        vitals: VitalSigns(), // Ensure this is initialized as empty vitals
         reports: [],
-        createdAt: Timestamp.now(),
+        createdAt: Timestamp.now().toDate(),
+        registrationTime: Timestamp.now().toDate(),
+        status: '',
+        priority: '', symptomChecks: {},
       ),
     );
 

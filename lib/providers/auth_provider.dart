@@ -10,18 +10,25 @@ class AuthProvider with ChangeNotifier {
   bool get loading => _loading;
 
   User? get currentUser => _auth.currentUser;
-  String? _role;
-  String? get currentRole => _role;
+
+  String? _userName;
+  String? _userRole;
+
+  String? get userName => _userName;
+  String? get userRole => _userRole;
+
   bool get loggedIn => currentUser != null;
 
   AuthProvider() {
-    // ✅ Listen for login/logout and refresh role automatically
+    // Listen for login/logout and refresh role automatically
     _auth.authStateChanges().listen(_onAuthStateChanged);
   }
 
+  // Handle changes in authentication state
   Future<void> _onAuthStateChanged(User? user) async {
     if (user == null) {
-      _role = null;
+      _userName = null;
+      _userRole = null;
       _loading = false;
       notifyListeners();
       return;
@@ -29,16 +36,17 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final doc = await _firestore.collection('users').doc(user.uid).get();
-      _role = doc.data()?['role'];
+      _userName = doc.data()?['name'];
+      _userRole = doc.data()?['role'];
     } catch (e) {
-      debugPrint('⚠️ Failed to fetch role: $e');
+      debugPrint('⚠️ Failed to fetch user data: $e');
     }
 
     _loading = false;
     notifyListeners();
   }
 
-  // 🔹 SIGN UP
+  // SIGN UP
   Future<void> signUp({
     required String email,
     required String password,
@@ -61,14 +69,15 @@ class AuthProvider with ChangeNotifier {
         'createdAt': DateTime.now(),
       });
 
-      _role = role;
+      _userName = name;
+      _userRole = role;
     } finally {
       _loading = false;
       notifyListeners();
     }
   }
 
-  // 🔹 SIGN IN
+  // SIGN IN
   Future<void> signIn(String email, String password) async {
     _loading = true;
     notifyListeners();
@@ -78,7 +87,7 @@ class AuthProvider with ChangeNotifier {
         email: email,
         password: password,
       );
-      // role will be fetched automatically by listener
+      // User data will be fetched automatically by listener
     } catch (e) {
       rethrow;
     } finally {
@@ -87,10 +96,11 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // 🔹 SIGN OUT
+  // SIGN OUT
   Future<void> signOut() async {
     await _auth.signOut();
-    _role = null;
+    _userName = null;
+    _userRole = null;
     notifyListeners();
   }
 }

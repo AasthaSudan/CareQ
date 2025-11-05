@@ -1,13 +1,20 @@
 import 'package:care_q/screens/dashboard/patient_dashboard.dart';
+import 'package:care_q/screens/profile_screen.dart';
+import 'package:care_q/screens/queue_screen.dart';
+import 'package:care_q/screens/register_screen.dart';
+import 'package:care_q/screens/room_assignment_screen.dart';
 import 'package:flutter/material.dart';
-import 'auth/login_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../services/openai_service.dart';
 
-class WelcomeScreen extends StatefulWidget {
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({Key? key}) : super(key: key);
+
   @override
-  _WelcomeScreenState createState() => _WelcomeScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen>
+class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -16,16 +23,17 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: Duration(seconds: 2),
+      duration: const Duration(seconds: 2),
       vsync: this,
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
     _controller.forward();
 
-    Future.delayed(Duration(seconds: 3), () {
+    // Delay then navigate to MainNavigator
+    Future.delayed(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => PatientDashboard()),
+        MaterialPageRoute(builder: (_) => const MainNavigator()),
       );
     });
   }
@@ -40,11 +48,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF6C63FF), Color(0xFF4DB6AC)],
+            colors: [Color(0xFF6B5CE7), Color(0xFF4ECDC4)],
           ),
         ),
         child: FadeTransition(
@@ -52,17 +60,13 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.local_hospital_rounded,
-                  size: 120,
-                  color: Colors.white,
-                ),
+              children: const [
+                Icon(Icons.local_hospital_rounded, size: 120, color: Colors.white),
                 SizedBox(height: 24),
                 Text(
-                  'Emergency Triage System',
+                  'Emergency Care',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -70,10 +74,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 SizedBox(height: 12),
                 Text(
                   'Real-time Patient Monitoring',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.white70),
                 ),
                 SizedBox(height: 40),
                 CircularProgressIndicator(
@@ -81,6 +82,75 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MainNavigator extends StatefulWidget {
+  const MainNavigator({Key? key}) : super(key: key);
+
+  @override
+  State<MainNavigator> createState() => _MainNavigatorState();
+}
+
+class _MainNavigatorState extends State<MainNavigator> {
+  int _currentIndex = 0;
+  late final OpenAIService aiService;
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Safe to read dotenv here
+    aiService = OpenAIService(apiKey: dotenv.env['OPENAI_API_KEY'] ?? '');
+  }
+
+  late final List<Widget> _screens = [
+    const PatientDashboard(),
+    RegisterPatientScreen(),
+    // Pass aiService to QueueScreen
+    QueueScreen(aiService: OpenAIService(apiKey: dotenv.env['OPENAI_API_KEY'] ?? '')),
+    const RoomsScreen(),
+    const ProfileScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (index) => setState(() => _currentIndex = index),
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: const Color(0xFF6B5CE7),
+            unselectedItemColor: Colors.grey,
+            elevation: 0,
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
+              BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline_rounded), label: 'Check-In'),
+              BottomNavigationBarItem(icon: Icon(Icons.people_rounded), label: 'Queue'),
+              BottomNavigationBarItem(icon: Icon(Icons.emergency_rounded), label: 'Rooms'),
+              BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
+            ],
           ),
         ),
       ),

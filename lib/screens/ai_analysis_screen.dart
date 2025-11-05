@@ -1,105 +1,225 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'queue_screen.dart';
-import '../config/theme.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import '../providers/patient_provider.dart';
+import '../theme.dart';
 
 class AIAnalysisScreen extends StatelessWidget {
-  static const routeName = '/ai';
-  final String? patientId;
-  const AIAnalysisScreen({Key? key, this.patientId}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
-    final confidence = 94.5;
-    final priority = 'URGENT';
-    final recommendation =
-        'Immediate review and observation recommended. Consider oxygen supplementation and priority room assignment.';
-
     return Scaffold(
-      // ✅ only one body now
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppTheme.primaryPurple, AppTheme.primaryDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('AI Analysis & Insights'),
+            Text(
+              'Predictive analytics and trends',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+            ),
+          ],
         ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(28),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.analytics,
-                        size: 56, color: Colors.white),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('AI Analysis Complete',
-                      style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      )),
-                  const SizedBox(height: 12),
-                  Text('Priority: $priority',
-                      style:
-                      GoogleFonts.inter(fontSize: 18, color: Colors.white)),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 18, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'Confidence: ${confidence.toStringAsFixed(1)}%',
-                      style: GoogleFonts.inter(
-                          color: Colors.white, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+      ),
+      body: Consumer<PatientProvider>(
+        builder: (context, provider, _) {
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Priority Distribution Pie Chart
+                Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Recommendation',
-                            style: GoogleFonts.inter(
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
                         Text(
-                          recommendation,
-                          style: GoogleFonts.inter(color: Colors.grey[700]),
+                          'Priority Distribution',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        SizedBox(
+                          height: 200,
+                          child: PieChart(
+                            PieChartData(
+                              sections: [
+                                PieChartSectionData(
+                                  value: provider.criticalPatients.length.toDouble(),
+                                  color: AppTheme.critical,
+                                  title: 'Critical\n${provider.criticalPatients.length}',
+                                  radius: 80,
+                                  titleStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                PieChartSectionData(
+                                  value: provider.urgentPatients.length.toDouble(),
+                                  color: AppTheme.urgent,
+                                  title: 'Urgent\n${provider.urgentPatients.length}',
+                                  radius: 80,
+                                  titleStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                PieChartSectionData(
+                                  value: provider.stablePatients.length.toDouble(),
+                                  color: AppTheme.stable,
+                                  title: 'Stable\n${provider.stablePatients.length}',
+                                  radius: 80,
+                                  titleStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                              centerSpaceRadius: 0,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                ),
+                SizedBox(height: 16),
+
+                // Wait Time Trend
+                Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Average Wait Time Trend',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        SizedBox(
+                          height: 200,
+                          child: LineChart(
+                            LineChartData(
+                              gridData: FlGridData(show: true),
+                              titlesData: FlTitlesData(
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: true),
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: true),
+                                ),
+                                rightTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                                topTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                              ),
+                              borderData: FlBorderData(show: true),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: [
+                                    FlSpot(0, 15),
+                                    FlSpot(1, 22),
+                                    FlSpot(2, 18),
+                                    FlSpot(3, 25),
+                                    FlSpot(4, 20),
+                                    FlSpot(5, provider.averageWaitTime as double),
+                                  ],
+                                  isCurved: true,
+                                  color: AppTheme.teal,
+                                  barWidth: 3,
+                                  dotData: FlDotData(show: true),
+                                  belowBarData: BarAreaData(
+                                    show: true,
+                                    color: AppTheme.teal.withOpacity(0.2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+
+                // Insights Cards
+                Card(
+                  color: AppTheme.critical.withOpacity(0.1),
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_rounded,
+                            color: AppTheme.critical, size: 32),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Critical Alert',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                '${provider.criticalPatients.length} critical patients require immediate attention',
+                                style: TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                Card(
+                  color: AppTheme.teal.withOpacity(0.1),
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.trending_up_rounded,
+                            color: AppTheme.teal, size: 32),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Trend Analysis',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                'Patient influx is ${provider.totalPatients > 10 ? "above" : "below"} average today',
+                                style: TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () =>
-            Navigator.pushReplacementNamed(context, QueueScreen.routeName),
-        label: const Text('View Queue'),
-        icon: const Icon(Icons.list),
+          );
+        },
       ),
     );
   }
