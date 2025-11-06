@@ -1,3 +1,4 @@
+import 'package:care_q/screens/main_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -13,7 +14,6 @@ import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/sign_up_screen.dart';
-import 'screens/dashboard/patient_dashboard.dart';
 
 // Theme
 import 'theme.dart';
@@ -22,7 +22,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
   await Firebase.initializeApp();
-
   runApp(const PatientTriageApp());
 }
 
@@ -51,7 +50,7 @@ class PatientTriageApp extends StatelessWidget {
               SplashScreen.routeName: (_) => const SplashScreen(),
               LoginScreen.routeName: (_) => const LoginScreen(),
               SignUpScreen.routeName: (_) => const SignUpScreen(),
-              PatientDashboard.routeName: (_) => const PatientDashboard(),
+              '/main': (_) => const MainNavigator(), // ✅ Route for MainNavigator
             },
           );
         },

@@ -48,10 +48,7 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isLoading = false);
 
     if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const PatientDashboard()),
-      );
+      Navigator.pushReplacementNamed(context, '/main');
     }
   }
 
@@ -97,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          "Login to continue using CareQ",
+                          "Login to continue using MediQ",
                           style: GoogleFonts.poppins(
                             color: isDark
                                 ? Colors.white70

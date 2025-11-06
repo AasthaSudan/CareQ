@@ -72,10 +72,8 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
       );
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const PatientDashboard()),
-      );
+      Navigator.pushReplacementNamed(context, '/main');
+
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

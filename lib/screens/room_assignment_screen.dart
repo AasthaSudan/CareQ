@@ -38,10 +38,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
         final patientId = widget.patient.id?.toString() ?? '';
         _assignedRoom = rooms.firstWhere(
               (room) => room.patientId == patientId,
-          orElse: () => rooms.first,
+          orElse: () => rooms.isNotEmpty ? rooms.first : _createDummyRoom(),
         );
       } else {
-        _assignedRoom = rooms.isNotEmpty ? rooms.first : null;
+        _assignedRoom = rooms.isNotEmpty ? rooms.first : _createDummyRoom();
       }
 
       _aiAnalysis = _generateAIAnalysis();
@@ -50,6 +50,19 @@ class _RoomsScreenState extends State<RoomsScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  RoomModel _createDummyRoom() {
+    return RoomModel(
+      id: 'R301',
+      number: '301',
+      floor: 'Floor 3',
+      status: 'Available',
+      type: 'Private',
+      patientName: 'You',
+      patientId: 'P001',
+      assignedTime: DateTime.now(),
+    );
   }
 
   Map<String, dynamic> _generateAIAnalysis() {
@@ -73,9 +86,11 @@ class _RoomsScreenState extends State<RoomsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF8F9FE),
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
@@ -83,8 +98,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
             'Room Assignment',
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w600,
-              fontSize: 18,
-              color: Colors.black,
+              fontSize: size.width * 0.045,
+              color: const Color(0xFF2C3E50),
             ),
           ),
         ),
@@ -92,13 +107,20 @@ class _RoomsScreenState extends State<RoomsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(color: Color(0xFF9D84F5)),
-              const SizedBox(height: 20),
+              SizedBox(
+                width: size.width * 0.15,
+                height: size.width * 0.15,
+                child: const CircularProgressIndicator(
+                  color: Color(0xFF7C6FE8),
+                  strokeWidth: 3,
+                ),
+              ),
+              SizedBox(height: size.height * 0.03),
               Text(
                 'AI is analyzing your requirements...',
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  color: const Color(0xFF9D84F5),
+                  fontSize: size.width * 0.038,
+                  color: const Color(0xFF7C6FE8),
                 ),
               ),
             ],
@@ -108,27 +130,27 @@ class _RoomsScreenState extends State<RoomsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: _buildAppBar(),
+      backgroundColor: const Color(0xFFF8F9FE),
+      appBar: _buildAppBar(size),
       body: RefreshIndicator(
         onRefresh: _loadRoomAssignment,
-        color: const Color(0xFF9D84F5),
-        backgroundColor: Colors.white,
+        color: const Color(0xFF7C6FE8),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(size.width * 0.05),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildPatientInfo(),
-              const SizedBox(height: 20),
-              _buildAIAnalysisCard(),
-              const SizedBox(height: 20),
-              _buildAssignedRoomCard(),
-              const SizedBox(height: 20),
-              _buildRoomFeaturesCard(),
-              const SizedBox(height: 20),
-              _buildAllRoomsStatus(),
+              _buildPatientInfo(size),
+              SizedBox(height: size.height * 0.025),
+              _buildAIAnalysisCard(size),
+              SizedBox(height: size.height * 0.025),
+              _buildAssignedRoomCard(size),
+              SizedBox(height: size.height * 0.025),
+              _buildRoomFeaturesCard(size),
+              SizedBox(height: size.height * 0.025),
+              _buildAllRoomsStatus(size),
+              SizedBox(height: size.height * 0.02),
             ],
           ),
         ),
@@ -136,43 +158,55 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  AppBar _buildAppBar() {
+  AppBar _buildAppBar(Size size) {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
+      leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back,
+          color: const Color(0xFF2C3E50),
+          size: size.width * 0.06,
+        ),
+        onPressed: () => Navigator.pop(context),
+      ),
       title: Text(
         'Room Assignment',
         style: GoogleFonts.poppins(
           fontWeight: FontWeight.w600,
-          fontSize: 18,
-          color: Colors.black,
+          fontSize: size.width * 0.045,
+          color: const Color(0xFF2C3E50),
         ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.refresh, color: Color(0xFF9D84F5)),
+          icon: Icon(
+            Icons.refresh,
+            color: const Color(0xFF7C6FE8),
+            size: size.width * 0.06,
+          ),
           onPressed: _loadRoomAssignment,
         ),
       ],
     );
   }
 
-  Widget _buildPatientInfo() {
-    final patientName = widget.patient?.name?.toString() ?? 'John Doe';
+  Widget _buildPatientInfo(Size size) {
+    final patientName = widget.patient?.name?.toString() ?? 'You';
     final patientId = widget.patient?.id?.toString() ?? 'P001';
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(size.width * 0.05),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF6B5CE7), Color(0xFF9D84F5)],
+          colors: [Color(0xFF7C6FE8), Color(0xFF9D84F5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(size.width * 0.04),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF9D84F5).withOpacity(0.3),
+            color: const Color(0xFF7C6FE8).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -181,14 +215,18 @@ class _RoomsScreenState extends State<RoomsScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(size.width * 0.04),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.person, size: 32, color: Colors.white),
+            child: Icon(
+              Icons.person,
+              size: size.width * 0.08,
+              color: Colors.white,
+            ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: size.width * 0.04),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,16 +234,16 @@ class _RoomsScreenState extends State<RoomsScreen> {
                 Text(
                   patientName,
                   style: GoogleFonts.poppins(
-                    fontSize: 20,
+                    fontSize: size.width * 0.048,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: size.height * 0.005),
                 Text(
                   'Patient ID: $patientId',
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
+                    fontSize: size.width * 0.032,
                     color: Colors.white.withOpacity(0.85),
                   ),
                 ),
@@ -217,13 +255,13 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  Widget _buildAIAnalysisCard() {
+  Widget _buildAIAnalysisCard(Size size) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(size.width * 0.05),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF9D84F5).withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(size.width * 0.04),
+        border: Border.all(color: const Color(0xFF7C6FE8).withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.2),
@@ -238,65 +276,76 @@ class _RoomsScreenState extends State<RoomsScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(size.width * 0.02),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9D84F5).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFF7C6FE8).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(size.width * 0.02),
                 ),
-                child: const Icon(Icons.psychology, color: Color(0xFF9D84F5), size: 20),
+                child: Icon(
+                  Icons.psychology,
+                  color: const Color(0xFF7C6FE8),
+                  size: size.width * 0.05,
+                ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: size.width * 0.03),
               Text(
                 'AI Analysis',
                 style: GoogleFonts.poppins(
-                  fontSize: 18,
+                  fontSize: size.width * 0.045,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: const Color(0xFF2C3E50),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: size.height * 0.02),
           _buildInfoRow(
+            size,
             'Risk Level',
             _aiAnalysis?['riskLevel'] ?? 'Moderate',
             _getRiskColor(_aiAnalysis?['riskLevel'] ?? 'Moderate'),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: size.height * 0.01),
           _buildInfoRow(
+            size,
             'Priority Score',
             '${_aiAnalysis?['priorityScore'] ?? 7.5}/10',
-            const Color(0xFF9D84F5),
+            const Color(0xFF7C6FE8),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: size.height * 0.01),
           _buildInfoRow(
+            size,
             'Estimated Stay',
             _aiAnalysis?['estimatedStayDuration'] ?? '3-5 days',
             Colors.grey[700]!,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: size.height * 0.02),
           Text(
             'AI Recommendations:',
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: size.width * 0.034,
               fontWeight: FontWeight.w600,
-              color: Colors.black,
+              color: const Color(0xFF2C3E50),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: size.height * 0.01),
           ...(_aiAnalysis?['recommendations'] as List<String>? ?? []).map(
                 (rec) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
+              padding: EdgeInsets.only(bottom: size.height * 0.008),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.check_circle, size: 16, color: Color(0xFF5EEAD4)),
-                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.check_circle,
+                    size: size.width * 0.04,
+                    color: const Color(0xFF95E1D3),
+                  ),
+                  SizedBox(width: size.width * 0.02),
                   Expanded(
                     child: Text(
                       rec,
                       style: GoogleFonts.poppins(
-                        fontSize: 13,
+                        fontSize: size.width * 0.03,
                         color: Colors.grey[700],
                       ),
                     ),
@@ -310,14 +359,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  Widget _buildAssignedRoomCard() {
+  Widget _buildAssignedRoomCard(Size size) {
     if (_assignedRoom == null) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(size.width * 0.05),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFFFA500).withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(size.width * 0.04),
+          border: Border.all(color: const Color(0xFFFFA07A).withOpacity(0.3)),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.2),
@@ -328,13 +377,17 @@ class _RoomsScreenState extends State<RoomsScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.info_outline, color: Color(0xFFFFA500), size: 30),
-            const SizedBox(width: 16),
+            Icon(
+              Icons.info_outline,
+              color: const Color(0xFFFFA07A),
+              size: size.width * 0.075,
+            ),
+            SizedBox(width: size.width * 0.04),
             Expanded(
               child: Text(
                 'No room assigned yet. Our AI system is finding the best room for you.',
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: size.width * 0.034,
                   color: Colors.grey[700],
                 ),
               ),
@@ -347,11 +400,11 @@ class _RoomsScreenState extends State<RoomsScreen> {
     final statusColor = _getStatusColor(_assignedRoom!.status);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(size.width * 0.05),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF9D84F5).withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(size.width * 0.04),
+        border: Border.all(color: const Color(0xFF7C6FE8).withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.2),
@@ -366,24 +419,29 @@ class _RoomsScreenState extends State<RoomsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Your Assigned Room',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              Flexible(
+                child: Text(
+                  'Your Assigned Room',
+                  style: GoogleFonts.poppins(
+                    fontSize: size.width * 0.045,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF2C3E50),
+                  ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                  horizontal: size.width * 0.03,
+                  vertical: size.height * 0.006,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(size.width * 0.05),
                 ),
                 child: Text(
                   _assignedRoom!.status,
                   style: GoogleFonts.poppins(
-                    fontSize: 12,
+                    fontSize: size.width * 0.028,
                     fontWeight: FontWeight.w600,
                     color: statusColor,
                   ),
@@ -391,14 +449,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: size.height * 0.025),
           Center(
             child: Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(size.width * 0.06),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF6B5CE7).withOpacity(0.3),
+                    const Color(0xFF7C6FE8).withOpacity(0.3),
                     const Color(0xFF9D84F5).withOpacity(0.3),
                   ],
                 ),
@@ -407,18 +465,29 @@ class _RoomsScreenState extends State<RoomsScreen> {
               child: Text(
                 _assignedRoom!.number,
                 style: GoogleFonts.poppins(
-                  fontSize: 48,
+                  fontSize: size.width * 0.12,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF9D84F5),
+                  color: const Color(0xFF7C6FE8),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          _buildRoomDetailRow(Icons.layers, 'Floor', _assignedRoom!.floor),
-          _buildRoomDetailRow(Icons.apartment, 'Type', _assignedRoom!.type ?? 'General'),
+          SizedBox(height: size.height * 0.025),
+          _buildRoomDetailRow(
+            size,
+            Icons.layers,
+            'Floor',
+            _assignedRoom!.floor,
+          ),
+          _buildRoomDetailRow(
+            size,
+            Icons.apartment,
+            'Type',
+            _assignedRoom!.type ?? 'General',
+          ),
           if (_assignedRoom!.assignedTime != null)
             _buildRoomDetailRow(
+              size,
               Icons.access_time,
               'Assigned On',
               _formatDateTime(_assignedRoom!.assignedTime!),
@@ -428,15 +497,15 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  Widget _buildRoomFeaturesCard() {
+  Widget _buildRoomFeaturesCard(Size size) {
     final features = _aiAnalysis?['roomFeatures'] as List<String>? ?? [];
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(size.width * 0.05),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF9D84F5).withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(size.width * 0.04),
+        border: Border.all(color: const Color(0xFF7C6FE8).withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.2),
@@ -451,34 +520,41 @@ class _RoomsScreenState extends State<RoomsScreen> {
           Text(
             'Room Features & Amenities',
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: size.width * 0.045,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: const Color(0xFF2C3E50),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: size.height * 0.02),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: size.width * 0.02,
+            runSpacing: size.height * 0.01,
             children: features.map((feature) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(
+                  horizontal: size.width * 0.03,
+                  vertical: size.height * 0.008,
+                ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF5EEAD4).withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFF95E1D3).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(size.width * 0.03),
                   border: Border.all(
-                    color: const Color(0xFF5EEAD4).withOpacity(0.3),
+                    color: const Color(0xFF95E1D3).withOpacity(0.3),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check_circle, size: 16, color: Color(0xFF5EEAD4)),
-                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.check_circle,
+                      size: size.width * 0.04,
+                      color: const Color(0xFF95E1D3),
+                    ),
+                    SizedBox(width: size.width * 0.015),
                     Text(
                       feature,
                       style: GoogleFonts.poppins(
-                        fontSize: 13,
+                        fontSize: size.width * 0.03,
                         color: Colors.grey[700],
                       ),
                     ),
@@ -492,17 +568,17 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  Widget _buildAllRoomsStatus() {
+  Widget _buildAllRoomsStatus(Size size) {
     final roomProvider = Provider.of<RoomProvider>(context);
     final rooms = roomProvider.rooms;
     final allRooms = _addDummyRoomsForDisplay(rooms);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(size.width * 0.05),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF9D84F5).withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(size.width * 0.04),
+        border: Border.all(color: const Color(0xFF7C6FE8).withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.2),
@@ -517,43 +593,46 @@ class _RoomsScreenState extends State<RoomsScreen> {
           Text(
             'Hospital Room Status',
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: size.width * 0.045,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: const Color(0xFF2C3E50),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: size.height * 0.02),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildStatusIndicator(
+                size,
                 'Available',
                 _countRoomsByStatus(allRooms, 'Available'),
-                const Color(0xFF10B981),
+                const Color(0xFF95E1D3),
               ),
               _buildStatusIndicator(
+                size,
                 'Occupied',
                 _countRoomsByStatus(allRooms, 'Occupied'),
-                const Color(0xFFEF4444),
+                const Color(0xFFFF6B9D),
               ),
               _buildStatusIndicator(
+                size,
                 'Cleaning',
                 _countRoomsByStatus(allRooms, 'Cleaning'),
-                const Color(0xFFF59E0B),
+                const Color(0xFFFFA07A),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: size.height * 0.025),
           Text(
             'All Rooms',
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: size.width * 0.04,
               fontWeight: FontWeight.w600,
-              color: Colors.black,
+              color: const Color(0xFF2C3E50),
             ),
           ),
-          const SizedBox(height: 12),
-          ...allRooms.map((room) => _buildRoomListItem(room)),
+          SizedBox(height: size.height * 0.015),
+          ...allRooms.map((room) => _buildRoomListItem(size, room)),
         ],
       ),
     );
@@ -617,28 +696,32 @@ class _RoomsScreenState extends State<RoomsScreen> {
     return rooms.where((r) => r.status == status).length;
   }
 
-  Widget _buildStatusIndicator(String label, int count, Color color) {
+  Widget _buildStatusIndicator(Size size, String label, int count, Color color) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: EdgeInsets.symmetric(
+            horizontal: size.width * 0.03,
+            vertical: size.height * 0.008,
+          ),
           decoration: BoxDecoration(
             color: color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(size.width * 0.03),
           ),
           child: Text(
             '$count',
             style: GoogleFonts.poppins(
+              fontSize: size.width * 0.04,
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: size.height * 0.008),
         Text(
           label,
           style: GoogleFonts.poppins(
-            fontSize: 12,
+            fontSize: size.width * 0.028,
             color: Colors.grey[700],
           ),
         ),
@@ -646,15 +729,15 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  Widget _buildRoomListItem(RoomModel room) {
+  Widget _buildRoomListItem(Size size, RoomModel room) {
     final statusColor = _getStatusColor(room.status);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.only(bottom: size.height * 0.015),
+      padding: EdgeInsets.all(size.width * 0.035),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFF8F9FE),
+        borderRadius: BorderRadius.circular(size.width * 0.03),
         border: Border.all(color: statusColor.withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
@@ -667,23 +750,29 @@ class _RoomsScreenState extends State<RoomsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Room ${room.number} (${room.floor})',
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
+          Flexible(
+            child: Text(
+              'Room ${room.number} (${room.floor})',
+              style: GoogleFonts.poppins(
+                fontSize: size.width * 0.034,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF2C3E50),
+              ),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.025,
+              vertical: size.height * 0.006,
+            ),
             decoration: BoxDecoration(
               color: statusColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(size.width * 0.05),
             ),
             child: Text(
               room.status,
               style: GoogleFonts.poppins(
-                fontSize: 12,
+                fontSize: size.width * 0.028,
                 fontWeight: FontWeight.w600,
                 color: statusColor,
               ),
@@ -694,21 +783,21 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, Color valueColor) {
+  Widget _buildInfoRow(Size size, String label, String value, Color valueColor) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: GoogleFonts.poppins(
-            fontSize: 14,
+            fontSize: size.width * 0.034,
             color: Colors.grey[700],
           ),
         ),
         Text(
           value,
           style: GoogleFonts.poppins(
-            fontSize: 14,
+            fontSize: size.width * 0.034,
             fontWeight: FontWeight.w600,
             color: valueColor,
           ),
@@ -717,17 +806,17 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  Widget _buildRoomDetailRow(IconData icon, String label, String value) {
+  Widget _buildRoomDetailRow(Size size, IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: EdgeInsets.only(bottom: size.height * 0.01),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.grey[700]),
-          const SizedBox(width: 8),
+          Icon(icon, size: size.width * 0.045, color: Colors.grey[700]),
+          SizedBox(width: size.width * 0.02),
           Text(
             '$label: ',
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: size.width * 0.034,
               fontWeight: FontWeight.w500,
               color: Colors.grey[700],
             ),
@@ -735,9 +824,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
           Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: size.width * 0.034,
               fontWeight: FontWeight.w600,
-              color: Colors.black,
+              color: const Color(0xFF2C3E50),
             ),
           ),
         ],
@@ -748,28 +837,28 @@ class _RoomsScreenState extends State<RoomsScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Available':
-        return const Color(0xFF10B981);
+        return const Color(0xFF95E1D3);
       case 'Occupied':
-        return const Color(0xFFEF4444);
+        return const Color(0xFFFF6B9D);
       case 'Cleaning':
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFFFA07A);
       case 'Maintenance':
-        return const Color(0xFF6B7280);
-      default:
         return const Color(0xFF9D84F5);
+      default:
+        return const Color(0xFF7C6FE8);
     }
   }
 
   Color _getRiskColor(String risk) {
     switch (risk.toLowerCase()) {
       case 'low':
-        return const Color(0xFF10B981);
+        return const Color(0xFF95E1D3);
       case 'moderate':
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFFFA07A);
       case 'high':
-        return const Color(0xFFEF4444);
+        return const Color(0xFFFF6B9D);
       default:
-        return const Color(0xFF9D84F5);
+        return const Color(0xFF7C6FE8);
     }
   }
 

@@ -46,37 +46,32 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FE),
       body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                _HeaderSection(),
-                const SizedBox(height: 14),
-                _QuickStatsSection(),
-                const SizedBox(height: 14),
-                Expanded(
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: _PatientCards(
-                      onNewPatient: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => RegisterPatientScreen()),
-                        );
-                      },
-                      onExistingPatient: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => ExistingPatientScreen()),
-                        );
-                      },
-                    ),
-                  ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _HeaderSection(),
+              const SizedBox(height: 14),
+              _QuickStatsSection(),
+              const SizedBox(height: 14),
+              SlideTransition(
+                position: _slideAnimation,
+                child: _PatientCards(
+                  onNewPatient: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => RegisterPatientScreen()),
+                    );
+                  },
+                  onExistingPatient: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => ExistingPatientScreen()),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -113,7 +108,7 @@ class _HeaderSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _StatusBadge(),
+              const _StatusBadge(),
               Row(
                 children: const [
                   _HeaderIcon(icon: Icons.notifications_outlined),
@@ -291,24 +286,20 @@ class _PatientCards extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(
-          child: _PatientCard(
-            icon: Icons.person_add_alt_rounded,
-            title: 'New Patient',
-            subtitle: 'Register a new patient',
-            color: const Color(0xFF7C6FE8),
-            onTap: onNewPatient,
-          ),
+        _PatientCard(
+          icon: Icons.person_add_alt_rounded,
+          title: 'New Patient',
+          subtitle: 'Register a new patient',
+          color: const Color(0xFF7C6FE8),
+          onTap: onNewPatient,
         ),
         const SizedBox(height: 12),
-        Expanded(
-          child: _PatientCard(
-            icon: Icons.folder_shared_rounded,
-            title: 'Existing Patient',
-            subtitle: 'View patient records',
-            color: const Color(0xFF95E1D3),
-            onTap: onExistingPatient,
-          ),
+        _PatientCard(
+          icon: Icons.folder_shared_rounded,
+          title: 'Existing Patient',
+          subtitle: 'View patient records',
+          color: const Color(0xFF95E1D3),
+          onTap: onExistingPatient,
         ),
       ],
     );
@@ -336,6 +327,7 @@ class _PatientCard extends StatelessWidget {
       ),
       child: Container(
         width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),

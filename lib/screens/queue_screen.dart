@@ -9,6 +9,7 @@ import '../services/openai_service.dart';
 class QueueScreen extends StatefulWidget {
   final OpenAIService aiService;
   const QueueScreen({Key? key, required this.aiService}) : super(key: key);
+
   @override
   _QueueScreenState createState() => _QueueScreenState();
 }
@@ -39,16 +40,24 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 360;
+    final isMediumScreen = size.width >= 360 && size.width < 600;
+
     return Consumer<PatientProvider>(
       builder: (context, provider, _) {
-        // Get current user's patient data (simulated - find patient with ID 'P001' which is "You")
-        final patients = provider.waitingPatients.isEmpty ? _generateDummyPatients() : provider.waitingPatients;
+        final patients = provider.waitingPatients.isEmpty
+            ? _generateDummyPatients()
+            : provider.waitingPatients;
 
-        // Find current user in the queue (looking for 'P001' or 'You')
-        final currentPatientIndex = patients.indexWhere((p) => p.id == 'P001' || p.name == 'You');
-        final currentPatient = currentPatientIndex != -1 ? patients[currentPatientIndex] : null;
+        final currentPatientIndex = patients.indexWhere(
+                (p) => p.id == 'P001' || p.name == 'You'
+        );
+        final currentPatient = currentPatientIndex != -1
+            ? patients[currentPatientIndex]
+            : null;
         final position = currentPatientIndex != -1 ? currentPatientIndex + 1 : 0;
-        final totalInQueue = patients.length + 2; // Add some padding to total
+        final totalInQueue = patients.length + 2;
         final patientsAhead = position > 0 ? position - 1 : 0;
 
         return Scaffold(
@@ -63,33 +72,38 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               color: const Color(0xFF7C6FE8),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: EdgeInsets.symmetric(
+                  horizontal: size.width * 0.05,
+                  vertical: size.height * 0.03,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildHeader(),
-                    const SizedBox(height: 32),
+                    _buildHeader(size),
+                    SizedBox(height: size.height * 0.03),
                     if (position > 0)
                       _buildPatientStatusCard(
+                        size,
                         currentPatient!,
                         position,
                         totalInQueue,
                         patientsAhead,
                       )
                     else
-                      _buildEmptyQueueCard(),
-                    const SizedBox(height: 24),
+                      _buildEmptyQueueCard(size),
+                    SizedBox(height: size.height * 0.025),
                     if (position > 0) ...[
-                      _buildQuickInfoSection(patientsAhead, currentPatient!),
-                      const SizedBox(height: 24),
+                      _buildQuickInfoSection(size, patientsAhead, currentPatient!),
+                      SizedBox(height: size.height * 0.025),
                       if (patientsAhead > 0) ...[
-                        _buildPatientsAheadSection(patients, currentPatientIndex),
-                        const SizedBox(height: 24),
+                        _buildPatientsAheadSection(size, patients, currentPatientIndex),
+                        SizedBox(height: size.height * 0.025),
                       ],
                     ],
-                    _buildWhatsNextSection(currentPatient?.room),
-                    const SizedBox(height: 24),
-                    _buildHelpButton(),
+                    _buildWhatsNextSection(size, currentPatient?.room),
+                    SizedBox(height: size.height * 0.025),
+                    _buildHelpButton(size),
+                    SizedBox(height: size.height * 0.02),
                   ],
                 ),
               ),
@@ -103,7 +117,6 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
   List<PatientModel> _generateDummyPatients() {
     final now = DateTime.now();
     return [
-      // Patient ahead - Position 1
       PatientModel(
         id: 'D001',
         name: 'Sarah Mitchell',
@@ -127,7 +140,6 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
         priority: 'Critical',
         room: 'Room 1',
       ),
-      // Patient ahead - Position 2
       PatientModel(
         id: 'D002',
         name: 'James Cooper',
@@ -151,7 +163,6 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
         priority: 'Urgent',
         room: null,
       ),
-      // Current User - Position 3
       PatientModel(
         id: 'P001',
         name: 'You',
@@ -175,7 +186,6 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
         priority: 'Stable',
         room: null,
       ),
-      // Patients behind
       PatientModel(
         id: 'D003',
         name: 'Emily Watson',
@@ -199,42 +209,19 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
         priority: 'Stable',
         room: null,
       ),
-      PatientModel(
-        id: 'D004',
-        name: 'Michael Chen',
-        age: 31,
-        gender: 'Male',
-        phone: '555-0204',
-        address: '654 Maple Dr',
-        emergencyLevel: 'Low',
-        symptoms: 'Follow-up consultation',
-        symptomChecks: {'consultation': true},
-        vitals: VitalSigns(
-          spO2: 98,
-          pulse: 70,
-          temperature: 36.7,
-          bloodPressure: 115,
-        ),
-        reports: [],
-        createdAt: now.subtract(const Duration(minutes: 5)),
-        registrationTime: now.subtract(const Duration(minutes: 5)),
-        status: 'Pending',
-        priority: 'Stable',
-        room: null,
-      ),
     ];
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(Size size) {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(size.width * 0.03),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF7C6FE8), Color(0xFF9D84F5)],
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(size.width * 0.03),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF7C6FE8).withOpacity(0.3),
@@ -243,9 +230,13 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               ),
             ],
           ),
-          child: const Icon(Icons.medical_services, color: Colors.white, size: 28),
+          child: Icon(
+            Icons.medical_services,
+            color: Colors.white,
+            size: size.width * 0.07,
+          ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: size.width * 0.04),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,7 +244,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               Text(
                 'Your Queue Status',
                 style: GoogleFonts.poppins(
-                  fontSize: 24,
+                  fontSize: size.width * 0.055,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF2C3E50),
                 ),
@@ -261,7 +252,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               Text(
                 'Track your appointment progress',
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: size.width * 0.032,
                   color: const Color(0xFF7C6FE8),
                 ),
               ),
@@ -273,6 +264,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
   }
 
   Widget _buildPatientStatusCard(
+      Size size,
       PatientModel patient,
       int position,
       int totalInQueue,
@@ -305,10 +297,10 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(size.width * 0.05),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(size.width * 0.06),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF7C6FE8).withOpacity(0.2),
@@ -319,12 +311,11 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
       ),
       child: Column(
         children: [
-          // Patient Name
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(size.width * 0.04),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -334,9 +325,13 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                   ),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.person, color: Color(0xFF7C6FE8), size: 32),
+                child: Icon(
+                  Icons.person,
+                  color: const Color(0xFF7C6FE8),
+                  size: size.width * 0.08,
+                ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: size.width * 0.04),
               Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,7 +339,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                     Text(
                       patient.name,
                       style: GoogleFonts.poppins(
-                        fontSize: 24,
+                        fontSize: size.width * 0.055,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF2C3E50),
                       ),
@@ -353,7 +348,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                     Text(
                       'Patient ID: ${patient.id}',
                       style: GoogleFonts.poppins(
-                        fontSize: 13,
+                        fontSize: size.width * 0.03,
                         color: Colors.grey[600],
                       ),
                     ),
@@ -362,20 +357,16 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               ),
             ],
           ),
-          const SizedBox(height: 28),
-
-          // Progress Section
+          SizedBox(height: size.height * 0.03),
           Text(
             'Track My Progress',
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: size.width * 0.038,
               fontWeight: FontWeight.w600,
               color: Colors.grey[700],
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Animated Progress Bar
+          SizedBox(height: size.height * 0.02),
           AnimatedBuilder(
             animation: _progressController,
             builder: (context, child) {
@@ -384,7 +375,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                   Stack(
                     children: [
                       Container(
-                        height: 14,
+                        height: size.height * 0.015,
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
                           borderRadius: BorderRadius.circular(12),
@@ -393,7 +384,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                       FractionallySizedBox(
                         widthFactor: progress * _progressController.value,
                         child: Container(
-                          height: 14,
+                          height: size.height * 0.015,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0xFF7C6FE8), Color(0xFF9D84F5)],
@@ -411,21 +402,21 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: size.height * 0.012),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'Started',
                         style: GoogleFonts.poppins(
-                          fontSize: 12,
+                          fontSize: size.width * 0.028,
                           color: Colors.grey[600],
                         ),
                       ),
                       Text(
                         '$progressPercent% Complete',
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: size.width * 0.032,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF7C6FE8),
                         ),
@@ -433,7 +424,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                       Text(
                         'Your Turn',
                         style: GoogleFonts.poppins(
-                          fontSize: 12,
+                          fontSize: size.width * 0.028,
                           color: Colors.grey[600],
                         ),
                       ),
@@ -443,11 +434,9 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               );
             },
           ),
-          const SizedBox(height: 28),
-
-          // Position Info Card
+          SizedBox(height: size.height * 0.03),
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(size.width * 0.04),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -455,7 +444,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                   const Color(0xFF9D84F5).withOpacity(0.1),
                 ],
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(size.width * 0.04),
               border: Border.all(
                 color: const Color(0xFF7C6FE8).withOpacity(0.3),
               ),
@@ -464,20 +453,31 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildInfoColumn(
+                  size,
                   icon: Icons.groups,
                   label: 'Position',
                   value: '#$position',
                   color: const Color(0xFF7C6FE8),
                 ),
-                Container(width: 1.5, height: 45, color: const Color(0xFF7C6FE8).withOpacity(0.3)),
+                Container(
+                  width: 1.5,
+                  height: size.height * 0.05,
+                  color: const Color(0xFF7C6FE8).withOpacity(0.3),
+                ),
                 _buildInfoColumn(
+                  size,
                   icon: Icons.access_time,
                   label: 'Est. Wait',
                   value: waitTime,
                   color: const Color(0xFF7C6FE8),
                 ),
-                Container(width: 1.5, height: 45, color: const Color(0xFF7C6FE8).withOpacity(0.3)),
+                Container(
+                  width: 1.5,
+                  height: size.height * 0.05,
+                  color: const Color(0xFF7C6FE8).withOpacity(0.3),
+                ),
                 _buildInfoColumn(
+                  size,
                   icon: priorityIcon,
                   label: 'Priority',
                   value: priorityText,
@@ -486,24 +486,26 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               ],
             ),
           ),
-
-          // Room Assignment (if available)
           if (patient.room != null) ...[
-            const SizedBox(height: 18),
+            SizedBox(height: size.height * 0.02),
             AnimatedBuilder(
               animation: _pulseController,
               builder: (context, child) {
                 return Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(18),
+                  padding: EdgeInsets.all(size.width * 0.04),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF95E1D3).withOpacity(0.8 + (_pulseController.value * 0.2)),
-                        const Color(0xFF95E1D3).withOpacity(0.6 + (_pulseController.value * 0.2)),
+                        const Color(0xFF95E1D3).withOpacity(
+                          0.8 + (_pulseController.value * 0.2),
+                        ),
+                        const Color(0xFF95E1D3).withOpacity(
+                          0.6 + (_pulseController.value * 0.2),
+                        ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(size.width * 0.04),
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF95E1D3).withOpacity(0.3),
@@ -515,18 +517,26 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.door_front_door, color: Colors.white, size: 26),
-                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.door_front_door,
+                        color: Colors.white,
+                        size: size.width * 0.06,
+                      ),
+                      SizedBox(width: size.width * 0.03),
                       Text(
                         'Assigned to ${patient.room}',
                         style: GoogleFonts.poppins(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: size.width * 0.04,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward, color: Colors.white, size: 22),
+                      SizedBox(width: size.width * 0.02),
+                      Icon(
+                        Icons.arrow_forward,
+                        color: Colors.white,
+                        size: size.width * 0.05,
+                      ),
                     ],
                   ),
                 );
@@ -538,20 +548,21 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildInfoColumn({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
+  Widget _buildInfoColumn(
+      Size size, {
+        required IconData icon,
+        required String label,
+        required String value,
+        required Color color,
+      }) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 30),
-        const SizedBox(height: 6),
+        Icon(icon, color: color, size: size.width * 0.07),
+        SizedBox(height: size.height * 0.008),
         Text(
           value,
           style: GoogleFonts.poppins(
-            fontSize: 18,
+            fontSize: size.width * 0.04,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF2C3E50),
           ),
@@ -559,7 +570,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
         Text(
           label,
           style: GoogleFonts.poppins(
-            fontSize: 12,
+            fontSize: size.width * 0.028,
             color: Colors.grey[600],
           ),
         ),
@@ -568,9 +579,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
   }
 
   String _getEstimatedWaitTime(PatientModel patient, int patientsAhead) {
-    // Calculate based on priority and patients ahead
-    int baseWaitPerPatient = 15; // minutes
-
+    int baseWaitPerPatient = 15;
     switch (patient.priority.toLowerCase()) {
       case 'critical':
         return '5 min';
@@ -581,34 +590,35 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
     }
   }
 
-  Widget _buildQuickInfoSection(int patientsAhead, PatientModel patient) {
+  Widget _buildQuickInfoSection(Size size, int patientsAhead, PatientModel patient) {
     final waitSince = _getTimeSince(patient.registrationTime);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Quick Info',
           style: GoogleFonts.poppins(
-            fontSize: 18,
+            fontSize: size.width * 0.045,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF2C3E50),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: size.height * 0.015),
         Row(
           children: [
             Expanded(
               child: _buildQuickInfoCard(
+                size,
                 icon: Icons.people_outline,
                 title: patientsAhead.toString(),
                 subtitle: patientsAhead == 1 ? 'Patient ahead' : 'Patients ahead',
                 color: const Color(0xFF7C6FE8),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: size.width * 0.03),
             Expanded(
               child: _buildQuickInfoCard(
+                size,
                 icon: Icons.schedule,
                 title: waitSince,
                 subtitle: 'Waiting time',
@@ -621,17 +631,18 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildQuickInfoCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-  }) {
+  Widget _buildQuickInfoCard(
+      Size size, {
+        required IconData icon,
+        required String title,
+        required String subtitle,
+        required Color color,
+      }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(size.width * 0.04),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(size.width * 0.04),
         border: Border.all(color: color.withOpacity(0.3), width: 2),
         boxShadow: [
           BoxShadow(
@@ -643,12 +654,12 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
+          Icon(icon, color: color, size: size.width * 0.08),
+          SizedBox(height: size.height * 0.01),
           Text(
             title,
             style: GoogleFonts.poppins(
-              fontSize: 20,
+              fontSize: size.width * 0.048,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF2C3E50),
             ),
@@ -656,7 +667,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
           Text(
             subtitle,
             style: GoogleFonts.poppins(
-              fontSize: 12,
+              fontSize: size.width * 0.028,
               color: Colors.grey[600],
             ),
             textAlign: TextAlign.center,
@@ -674,7 +685,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
     return '${diff.inMinutes}m';
   }
 
-  Widget _buildPatientsAheadSection(List<PatientModel> allPatients, int currentIndex) {
+  Widget _buildPatientsAheadSection(Size size, List<PatientModel> allPatients, int currentIndex) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -684,16 +695,19 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
             Text(
               'Queue Overview',
               style: GoogleFonts.poppins(
-                fontSize: 18,
+                fontSize: size.width * 0.045,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF2C3E50),
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: EdgeInsets.symmetric(
+                horizontal: size.width * 0.03,
+                vertical: size.height * 0.008,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFF7C6FE8).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(size.width * 0.03),
                 border: Border.all(
                   color: const Color(0xFF7C6FE8).withOpacity(0.3),
                 ),
@@ -701,7 +715,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               child: Text(
                 '${allPatients.length} in queue',
                 style: GoogleFonts.poppins(
-                  fontSize: 12,
+                  fontSize: size.width * 0.028,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF7C6FE8),
                 ),
@@ -709,18 +723,18 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: size.height * 0.015),
         ...allPatients.asMap().entries.map((entry) {
           final index = entry.key;
           final patient = entry.value;
           final isCurrentUser = index == currentIndex;
-          return _buildPatientQueueCard(patient, index + 1, isCurrentUser);
+          return _buildPatientQueueCard(size, patient, index + 1, isCurrentUser);
         }).toList(),
       ],
     );
   }
 
-  Widget _buildPatientQueueCard(PatientModel patient, int position, bool isCurrentUser) {
+  Widget _buildPatientQueueCard(Size size, PatientModel patient, int position, bool isCurrentUser) {
     Color priorityColor;
     switch (patient.priority.toLowerCase()) {
       case 'critical':
@@ -733,15 +747,16 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
         priorityColor = const Color(0xFF95E1D3);
     }
 
-    // Show real name only for current user, otherwise use generic label
     final displayName = isCurrentUser ? patient.name : 'Patient ${patient.id}';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: size.height * 0.015),
+      padding: EdgeInsets.all(size.width * 0.04),
       decoration: BoxDecoration(
-        color: isCurrentUser ? const Color(0xFF7C6FE8).withOpacity(0.1) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isCurrentUser
+            ? const Color(0xFF7C6FE8).withOpacity(0.1)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(size.width * 0.04),
         border: Border.all(
           color: isCurrentUser
               ? const Color(0xFF7C6FE8)
@@ -760,10 +775,9 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
       ),
       child: Row(
         children: [
-          // Position Badge
           Container(
-            width: 40,
-            height: 40,
+            width: size.width * 0.1,
+            height: size.width * 0.1,
             decoration: BoxDecoration(
               gradient: isCurrentUser
                   ? const LinearGradient(
@@ -772,47 +786,52 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                   : LinearGradient(
                 colors: [priorityColor, priorityColor.withOpacity(0.7)],
               ),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(size.width * 0.025),
             ),
             child: Center(
               child: Text(
                 '#$position',
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: size.width * 0.038,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          // Patient Info
+          SizedBox(width: size.width * 0.04),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text(
-                      displayName,
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.w600,
-                        color: const Color(0xFF2C3E50),
+                    Flexible(
+                      child: Text(
+                        displayName,
+                        style: GoogleFonts.poppins(
+                          fontSize: size.width * 0.036,
+                          fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.w600,
+                          color: const Color(0xFF2C3E50),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (isCurrentUser) ...[
-                      const SizedBox(width: 8),
+                      SizedBox(width: size.width * 0.02),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: size.width * 0.02,
+                          vertical: size.height * 0.004,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF7C6FE8),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(size.width * 0.02),
                         ),
                         child: Text(
                           'YOU',
                           style: GoogleFonts.poppins(
-                            fontSize: 10,
+                            fontSize: size.width * 0.024,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                             letterSpacing: 0.5,
@@ -822,15 +841,15 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                     ],
                   ],
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: size.height * 0.004),
                 Row(
                   children: [
-                    Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
+                    Icon(Icons.access_time, size: size.width * 0.032, color: Colors.grey[600]),
+                    SizedBox(width: size.width * 0.01),
                     Text(
                       '${_getTimeSince(patient.registrationTime)} wait',
                       style: GoogleFonts.poppins(
-                        fontSize: 12,
+                        fontSize: size.width * 0.028,
                         color: Colors.grey[600],
                       ),
                     ),
@@ -839,33 +858,31 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               ],
             ),
           ),
-          // Priority Badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.025,
+              vertical: size.height * 0.006,
+            ),
             decoration: BoxDecoration(
               color: priorityColor,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(size.width * 0.03),
             ),
             child: Text(
               patient.priority.toUpperCase(),
               style: GoogleFonts.poppins(
-                fontSize: 10,
+                fontSize: size.width * 0.024,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
                 letterSpacing: 0.5,
               ),
             ),
           ),
-          // Room status
           if (patient.room != null) ...[
-            const SizedBox(width: 8),
-            Tooltip(
-              message: 'In ${patient.room}',
-              child: Icon(
-                Icons.door_front_door,
-                color: const Color(0xFF95E1D3),
-                size: 20,
-              ),
+            SizedBox(width: size.width * 0.02),
+            Icon(
+              Icons.door_front_door,
+              color: const Color(0xFF95E1D3),
+              size: size.width * 0.05,
             ),
           ],
         ],
@@ -873,13 +890,13 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildWhatsNextSection(String? room) {
+  Widget _buildWhatsNextSection(Size size, String? room) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(size.width * 0.05),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(size.width * 0.05),
         border: Border.all(
           color: const Color(0xFF7C6FE8).withOpacity(0.3),
           width: 2,
@@ -897,39 +914,47 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
         children: [
           Row(
             children: [
-              const Icon(Icons.info_outline, color: Color(0xFF7C6FE8), size: 24),
-              const SizedBox(width: 8),
+              Icon(
+                Icons.info_outline,
+                color: const Color(0xFF7C6FE8),
+                size: size.width * 0.06,
+              ),
+              SizedBox(width: size.width * 0.02),
               Text(
                 "What's Next?",
                 style: GoogleFonts.poppins(
-                  fontSize: 18,
+                  fontSize: size.width * 0.045,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF2C3E50),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: size.height * 0.02),
           if (room != null)
             _buildNextStep(
+              size,
               icon: Icons.meeting_room,
               text: 'Please proceed to $room. A doctor will see you shortly.',
               iconColor: const Color(0xFF95E1D3),
             )
           else
             _buildNextStep(
+              size,
               icon: Icons.event_seat,
               text: 'Please remain in the waiting area. You\'ll be called soon!',
               iconColor: const Color(0xFFFFA07A),
             ),
-          const SizedBox(height: 12),
+          SizedBox(height: size.height * 0.015),
           _buildNextStep(
+            size,
             icon: Icons.notifications_active,
             text: 'We\'ll notify you when it\'s your turn',
             iconColor: const Color(0xFF7C6FE8),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: size.height * 0.015),
           _buildNextStep(
+            size,
             icon: Icons.phone,
             text: 'Keep your phone handy for updates',
             iconColor: const Color(0xFFFF6B9D),
@@ -939,27 +964,28 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildNextStep({
-    required IconData icon,
-    required String text,
-    required Color iconColor,
-  }) {
+  Widget _buildNextStep(
+      Size size, {
+        required IconData icon,
+        required String text,
+        required Color iconColor,
+      }) {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(size.width * 0.025),
           decoration: BoxDecoration(
             color: iconColor.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(size.width * 0.025),
           ),
-          child: Icon(icon, color: iconColor, size: 20),
+          child: Icon(icon, color: iconColor, size: size.width * 0.05),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: size.width * 0.03),
         Expanded(
           child: Text(
             text,
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: size.width * 0.032,
               color: Colors.grey[700],
             ),
           ),
@@ -968,26 +994,30 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildHelpButton() {
+  Widget _buildHelpButton(Size size) {
     return Center(
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: Color(0xFF7C6FE8), width: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: size.width * 0.08,
+            vertical: size.height * 0.018,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(size.width * 0.04),
           ),
         ),
-        onPressed: () {
-          // Show help dialog
-          _showHelpDialog();
-        },
-        icon: const Icon(Icons.support_agent, color: Color(0xFF7C6FE8)),
+        onPressed: () => _showHelpDialog(size),
+        icon: Icon(
+          Icons.support_agent,
+          color: const Color(0xFF7C6FE8),
+          size: size.width * 0.06,
+        ),
         label: Text(
           "Need Help?",
           style: GoogleFonts.poppins(
             color: const Color(0xFF2C3E50),
-            fontSize: 16,
+            fontSize: size.width * 0.038,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -995,19 +1025,26 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
     );
   }
 
-  void _showHelpDialog() {
+  void _showHelpDialog(Size size) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(size.width * 0.05),
+        ),
         title: Row(
           children: [
-            Icon(Icons.support_agent, color: const Color(0xFF7C6FE8)),
-            const SizedBox(width: 12),
+            Icon(
+              Icons.support_agent,
+              color: const Color(0xFF7C6FE8),
+              size: size.width * 0.06,
+            ),
+            SizedBox(width: size.width * 0.03),
             Text(
               'Contact Support',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
+                fontSize: size.width * 0.045,
                 color: const Color(0xFF2C3E50),
               ),
             ),
@@ -1017,15 +1054,15 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildHelpOption(
+              size,
               icon: Icons.phone,
               title: 'Call Helpdesk',
               subtitle: '+1 (555) 123-4567',
-              onTap: () {
-                // Handle phone call
-              },
+              onTap: () {},
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: size.height * 0.015),
             _buildHelpOption(
+              size,
               icon: Icons.chat_bubble_outline,
               title: 'AI Live Chat',
               subtitle: 'Chat with our multilingual AI assistant',
@@ -1034,14 +1071,13 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                 _showAIChatbot();
               },
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: size.height * 0.015),
             _buildHelpOption(
+              size,
               icon: Icons.email_outlined,
               title: 'Email Support',
               subtitle: 'support@hospital.com',
-              onTap: () {
-                // Handle email
-              },
+              onTap: () {},
             ),
           ],
         ),
@@ -1052,6 +1088,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
               'Close',
               style: GoogleFonts.poppins(
                 color: const Color(0xFF7C6FE8),
+                fontSize: size.width * 0.036,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1070,28 +1107,29 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildHelpOption({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    VoidCallback? onTap,
-  }) {
+  Widget _buildHelpOption(
+      Size size, {
+        required IconData icon,
+        required String title,
+        required String subtitle,
+        VoidCallback? onTap,
+      }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(size.width * 0.03),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(size.width * 0.04),
         decoration: BoxDecoration(
           color: const Color(0xFF7C6FE8).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(size.width * 0.03),
           border: Border.all(
             color: const Color(0xFF7C6FE8).withOpacity(0.3),
           ),
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF7C6FE8), size: 28),
-            const SizedBox(width: 16),
+            Icon(icon, color: const Color(0xFF7C6FE8), size: size.width * 0.07),
+            SizedBox(width: size.width * 0.04),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1099,7 +1137,7 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                   Text(
                     title,
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: size.width * 0.034,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF2C3E50),
                     ),
@@ -1107,24 +1145,75 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
                   Text(
                     subtitle,
                     style: GoogleFonts.poppins(
-                      fontSize: 12,
+                      fontSize: size.width * 0.028,
                       color: Colors.grey[600],
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: const Color(0xFF7C6FE8), size: 16),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: const Color(0xFF7C6FE8),
+              size: size.width * 0.04,
+            ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildEmptyQueueCard(Size size) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(size.width * 0.1),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(size.width * 0.06),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C6FE8).withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.event_available,
+            color: Colors.grey[400],
+            size: size.width * 0.16,
+          ),
+          SizedBox(height: size.height * 0.02),
+          Text(
+            'No Active Appointment',
+            style: GoogleFonts.poppins(
+              fontSize: size.width * 0.048,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          SizedBox(height: size.height * 0.01),
+          Text(
+            'You don\'t have any appointments in the queue right now',
+            style: GoogleFonts.poppins(
+              fontSize: size.width * 0.032,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
+// AI Chatbot Screen
 class AIChatbotScreen extends StatefulWidget {
   final OpenAIService aiService;
   const AIChatbotScreen({Key? key, required this.aiService}) : super(key: key);
+
   @override
   _AIChatbotScreenState createState() => _AIChatbotScreenState();
 }
@@ -1148,7 +1237,6 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
   @override
   void initState() {
     super.initState();
-    // Send welcome message
     _addBotMessage(_getWelcomeMessage());
   }
 
@@ -1218,10 +1306,8 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
 
     setState(() => _isTyping = true);
 
-    // Simulate AI response delay
     await Future.delayed(const Duration(seconds: 1));
 
-    // Generate AI response based on message
     final response = _generateAIResponse(message.toLowerCase());
 
     setState(() => _isTyping = false);
@@ -1229,7 +1315,6 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
   }
 
   String _generateAIResponse(String message) {
-    // Simple keyword-based responses (in production, use actual AI API)
     if (message.contains('wait') || message.contains('time') || message.contains('long')) {
       return _translateResponse('Your estimated wait time is based on current queue position and priority. Critical cases are seen first.');
     } else if (message.contains('position') || message.contains('queue')) {
@@ -1248,8 +1333,6 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
   }
 
   String _translateResponse(String englishText) {
-    // In production, integrate with translation API
-    // For now, return basic translations for demo
     switch (_selectedLanguage) {
       case 'Spanish':
         return 'Estoy aquí para ayudar. ' + englishText;
@@ -1268,6 +1351,8 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FE),
       appBar: AppBar(
@@ -1280,21 +1365,25 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(size.width * 0.02),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.smart_toy, color: Colors.white, size: 20),
+              child: Icon(
+                Icons.smart_toy,
+                color: Colors.white,
+                size: size.width * 0.05,
+              ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: size.width * 0.03),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'AI Assistant',
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: size.width * 0.04,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -1302,7 +1391,7 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
                 Text(
                   'Always here to help',
                   style: GoogleFonts.poppins(
-                    fontSize: 11,
+                    fontSize: size.width * 0.026,
                     color: Colors.white70,
                   ),
                 ),
@@ -1316,9 +1405,9 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
               children: [
                 Text(
                   _languages[_selectedLanguage]!,
-                  style: const TextStyle(fontSize: 20),
+                  style: TextStyle(fontSize: size.width * 0.05),
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: size.width * 0.01),
                 const Icon(Icons.arrow_drop_down, color: Colors.white),
               ],
             ),
@@ -1334,8 +1423,8 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
               value: entry.key,
               child: Row(
                 children: [
-                  Text(entry.value, style: const TextStyle(fontSize: 20)),
-                  const SizedBox(width: 12),
+                  Text(entry.value, style: TextStyle(fontSize: size.width * 0.05)),
+                  SizedBox(width: size.width * 0.03),
                   Text(entry.key, style: GoogleFonts.poppins()),
                 ],
               ),
@@ -1346,52 +1435,49 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
       ),
       body: Column(
         children: [
-          // Quick Actions
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(size.width * 0.04),
             color: Colors.white,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildQuickAction('Wait Time', Icons.access_time),
-                  _buildQuickAction('My Position', Icons.pin_drop),
-                  _buildQuickAction('Room Status', Icons.meeting_room),
-                  _buildQuickAction('Contact Doctor', Icons.medical_services),
+                  _buildQuickAction(size, 'Wait Time', Icons.access_time),
+                  _buildQuickAction(size, 'My Position', Icons.pin_drop),
+                  _buildQuickAction(size, 'Room Status', Icons.meeting_room),
+                  _buildQuickAction(size, 'Contact Doctor', Icons.medical_services),
                 ],
               ),
             ),
           ),
-          // Messages
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(size.width * 0.04),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                return _buildMessageBubble(_messages[index]);
+                return _buildMessageBubble(size, _messages[index]);
               },
             ),
           ),
-          // Typing Indicator
           if (_isTyping)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: size.width * 0.04),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(size.width * 0.03),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(size.width * 0.05),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _buildTypingDot(0),
-                        const SizedBox(width: 4),
+                        SizedBox(width: size.width * 0.01),
                         _buildTypingDot(200),
-                        const SizedBox(width: 4),
+                        SizedBox(width: size.width * 0.01),
                         _buildTypingDot(400),
                       ],
                     ),
@@ -1399,9 +1485,8 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
                 ],
               ),
             ),
-          // Input Field
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(size.width * 0.04),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -1417,34 +1502,35 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
-                    style: GoogleFonts.poppins(),
+                    style: GoogleFonts.poppins(fontSize: size.width * 0.036),
                     decoration: InputDecoration(
                       hintText: 'Type your message...',
                       hintStyle: GoogleFonts.poppins(color: Colors.grey),
                       filled: true,
                       fillColor: const Color(0xFFF8F9FE),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(size.width * 0.06),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: size.width * 0.05,
+                        vertical: size.height * 0.015,
                       ),
                     ),
                     onSubmitted: _sendMessage,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: size.width * 0.03),
                 Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
                       colors: [Color(0xFF7C6FE8), Color(0xFF9D84F5)],
                     ),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.send, color: Colors.white),
+                    iconSize: size.width * 0.06,
                     onPressed: () => _sendMessage(_messageController.text),
                   ),
                 ),
@@ -1456,13 +1542,16 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
     );
   }
 
-  Widget _buildQuickAction(String label, IconData icon) {
+  Widget _buildQuickAction(Size size, String label, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: EdgeInsets.only(right: size.width * 0.02),
       child: InkWell(
         onTap: () => _sendMessage(label),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.symmetric(
+            horizontal: size.width * 0.04,
+            vertical: size.height * 0.01,
+          ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -1470,19 +1559,19 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
                 const Color(0xFF9D84F5).withOpacity(0.1),
               ],
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(size.width * 0.05),
             border: Border.all(
               color: const Color(0xFF7C6FE8).withOpacity(0.3),
             ),
           ),
           child: Row(
             children: [
-              Icon(icon, color: const Color(0xFF7C6FE8), size: 18),
-              const SizedBox(width: 8),
+              Icon(icon, color: const Color(0xFF7C6FE8), size: size.width * 0.045),
+              SizedBox(width: size.width * 0.02),
               Text(
                 label,
                 style: GoogleFonts.poppins(
-                  fontSize: 13,
+                  fontSize: size.width * 0.032,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF7C6FE8),
                 ),
@@ -1494,9 +1583,9 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage message) {
+  Widget _buildMessageBubble(Size size, ChatMessage message) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: size.height * 0.02),
       child: Row(
         mainAxisAlignment:
         message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -1504,20 +1593,24 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
         children: [
           if (!message.isUser) ...[
             Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              padding: EdgeInsets.all(size.width * 0.02),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   colors: [Color(0xFF7C6FE8), Color(0xFF9D84F5)],
                 ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.smart_toy, color: Colors.white, size: 20),
+              child: Icon(
+                Icons.smart_toy,
+                color: Colors.white,
+                size: size.width * 0.05,
+              ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: size.width * 0.03),
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(size.width * 0.04),
               decoration: BoxDecoration(
                 gradient: message.isUser
                     ? const LinearGradient(
@@ -1525,7 +1618,7 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
                 )
                     : null,
                 color: message.isUser ? null : Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(size.width * 0.05),
                 boxShadow: [
                   BoxShadow(
                     color: message.isUser
@@ -1542,18 +1635,16 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
                   Text(
                     message.text,
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: size.width * 0.034,
                       color: message.isUser ? Colors.white : const Color(0xFF2C3E50),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: size.height * 0.005),
                   Text(
                     _formatTime(message.timestamp),
                     style: GoogleFonts.poppins(
-                      fontSize: 10,
-                      color: message.isUser
-                          ? Colors.white70
-                          : Colors.grey[600],
+                      fontSize: size.width * 0.024,
+                      color: message.isUser ? Colors.white70 : Colors.grey[600],
                     ),
                   ),
                 ],
@@ -1561,11 +1652,15 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
             ),
           ),
           if (message.isUser) ...[
-            const SizedBox(width: 12),
+            SizedBox(width: size.width * 0.03),
             CircleAvatar(
-              radius: 18,
+              radius: size.width * 0.045,
               backgroundColor: const Color(0xFF7C6FE8).withOpacity(0.2),
-              child: const Icon(Icons.person, color: Color(0xFF7C6FE8), size: 20),
+              child: Icon(
+                Icons.person,
+                color: const Color(0xFF7C6FE8),
+                size: size.width * 0.05,
+              ),
             ),
           ],
         ],
@@ -1607,45 +1702,4 @@ class ChatMessage {
     required this.isUser,
     required this.timestamp,
   });
-}
-
-Widget _buildEmptyQueueCard() {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(40),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      boxShadow: [
-        BoxShadow(
-          color: const Color(0xFF7C6FE8).withOpacity(0.1),
-          blurRadius: 12,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Column(
-      children: [
-        Icon(Icons.event_available, color: Colors.grey[400], size: 64),
-        const SizedBox(height: 16),
-        Text(
-          'No Active Appointment',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[700],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'You don\'t have any appointments in the queue right now',
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    ),
-  );
 }

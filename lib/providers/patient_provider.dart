@@ -98,7 +98,7 @@ class PatientProvider with ChangeNotifier {
     required String address,
     required String emergencyLevel,
     required Map<String, bool> symptomChecks,  // Ensure this is a Map<String, bool>
-    File? imageFile, required String symptoms,
+    File? imageFile, required String symptoms, required VitalSigns vitals,
   }) async {
     _loading = true;
     notifyListeners();

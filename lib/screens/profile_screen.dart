@@ -96,6 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _buildAppBar(bool isDark, Color textColor) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     return SliverAppBar(
       expandedHeight: 200,
       floating: false,
