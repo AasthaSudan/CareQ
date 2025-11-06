@@ -12,36 +12,28 @@ class AuthProvider with ChangeNotifier {
   User? get currentUser => _auth.currentUser;
 
   String? _userName;
-  String? _userRole;
-
   String? get userName => _userName;
-  String? get userRole => _userRole;
 
   bool get loggedIn => currentUser != null;
 
   AuthProvider() {
-    // Listen for login/logout and refresh role automatically
     _auth.authStateChanges().listen(_onAuthStateChanged);
   }
 
-  // Handle changes in authentication state
   Future<void> _onAuthStateChanged(User? user) async {
     if (user == null) {
       _userName = null;
-      _userRole = null;
       _loading = false;
       notifyListeners();
       return;
     }
-
     try {
       final doc = await _firestore.collection('users').doc(user.uid).get();
-      _userName = doc.data()?['name'];
-      _userRole = doc.data()?['role'];
+      _userName = doc.data()?['name'] ?? user.email?.split('@')[0];
     } catch (e) {
-      debugPrint('⚠️ Failed to fetch user data: $e');
+      debugPrint('Failed to fetch user data: $e');
+      _userName = user.email?.split('@')[0];
     }
-
     _loading = false;
     notifyListeners();
   }
@@ -51,26 +43,21 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String password,
     required String name,
-    required String role,
   }) async {
     _loading = true;
     notifyListeners();
-
     try {
       final userCred = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-
       await _firestore.collection('users').doc(userCred.user!.uid).set({
         'name': name,
         'email': email,
-        'role': role,
+        'role': 'patient',
         'createdAt': DateTime.now(),
       });
-
       _userName = name;
-      _userRole = role;
     } finally {
       _loading = false;
       notifyListeners();
@@ -81,15 +68,8 @@ class AuthProvider with ChangeNotifier {
   Future<void> signIn(String email, String password) async {
     _loading = true;
     notifyListeners();
-
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      // User data will be fetched automatically by listener
-    } catch (e) {
-      rethrow;
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
     } finally {
       _loading = false;
       notifyListeners();
@@ -100,7 +80,6 @@ class AuthProvider with ChangeNotifier {
   Future<void> signOut() async {
     await _auth.signOut();
     _userName = null;
-    _userRole = null;
     notifyListeners();
   }
 }

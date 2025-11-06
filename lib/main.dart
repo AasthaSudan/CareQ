@@ -1,40 +1,58 @@
-import 'package:care_q/providers/room_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'screens/splash_screen.dart';
+
+// Providers
+import 'providers/auth_provider.dart';
 import 'providers/patient_provider.dart';
+import 'providers/room_provider.dart';
 import 'providers/theme_provider.dart';
+
+// Screens
+import 'screens/splash_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/sign_up_screen.dart';
+import 'screens/dashboard/patient_dashboard.dart';
+
+// Theme
 import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
   await Firebase.initializeApp();
+
   runApp(const PatientTriageApp());
 }
 
 class PatientTriageApp extends StatelessWidget {
-  const PatientTriageApp({Key? key}) : super(key: key);
+  const PatientTriageApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => PatientProvider()),
         ChangeNotifierProvider(create: (_) => RoomProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => PatientProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
           return MaterialApp(
             title: 'CareQ',
+            debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: themeProvider.themeMode,
-            debugShowCheckedModeBanner: false,
-            home: const SplashScreen(),
+            themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            initialRoute: SplashScreen.routeName,
+            routes: {
+              SplashScreen.routeName: (_) => const SplashScreen(),
+              LoginScreen.routeName: (_) => const LoginScreen(),
+              SignUpScreen.routeName: (_) => const SignUpScreen(),
+              PatientDashboard.routeName: (_) => const PatientDashboard(),
+            },
           );
         },
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
 
@@ -30,6 +31,30 @@ class AppTheme {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static TextStyle titleStyle({double size = 32, Color color = textPrimary}) {
+    return GoogleFonts.poppins(
+      fontSize: size,
+      fontWeight: FontWeight.bold,
+      color: color,
+    );
+  }
+
+  static TextStyle subtitleStyle({double size = 16, Color color = textSecondary}) {
+    return GoogleFonts.poppins(
+      fontSize: size,
+      fontWeight: FontWeight.w500,
+      color: color,
+    );
+  }
+
+  static TextStyle bodyStyle({double size = 14, Color color = textPrimary}) {
+    return GoogleFonts.poppins(
+      fontSize: size,
+      fontWeight: FontWeight.normal,
+      color: color,
+    );
+  }
 
   static LinearGradient tealGradient() => const LinearGradient(
     colors: [Color(0xFF44B6AF), Color(0xFF60C7B9)],

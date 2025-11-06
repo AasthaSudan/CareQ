@@ -4,6 +4,7 @@ import '../existing_patient_screen.dart';
 import '../register_screen.dart';
 
 class PatientDashboard extends StatefulWidget {
+  static const String routeName = '/patient-dashboard';
   const PatientDashboard({Key? key}) : super(key: key);
 
   @override
