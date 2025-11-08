@@ -91,6 +91,43 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    // Responsive sizing based on screen dimensions
+    final isSmallScreen = width < 360;
+    final isMediumScreen = width >= 360 && width < 400;
+    final isLargeScreen = width >= 400;
+
+    // Dynamic padding
+    final horizontalPadding = isSmallScreen ? 16.0 : (isMediumScreen ? 20.0 : 24.0);
+    final cardPadding = isSmallScreen ? 20.0 : (isMediumScreen ? 26.0 : 32.0);
+
+    // Dynamic text sizes
+    final titleSize = isSmallScreen ? 24.0 : (isMediumScreen ? 26.0 : 28.0);
+    final subtitleSize = isSmallScreen ? 12.0 : 14.0;
+    final inputFontSize = isSmallScreen ? 13.0 : 15.0;
+    final buttonTextSize = isSmallScreen ? 14.0 : 16.0;
+    final linkTextSize = isSmallScreen ? 12.0 : 14.0;
+
+    // Dynamic icon sizes
+    final logoIconSize = isSmallScreen ? 40.0 : (isMediumScreen ? 44.0 : 48.0);
+    final inputIconSize = isSmallScreen ? 18.0 : 20.0;
+
+    // Dynamic spacing
+    final spacing1 = isSmallScreen ? 6.0 : 8.0;
+    final spacing2 = isSmallScreen ? 12.0 : 16.0;
+    final spacing3 = isSmallScreen ? 20.0 : 24.0;
+    final spacing4 = isSmallScreen ? 24.0 : 32.0;
+
+    // Button height
+    final buttonHeight = isSmallScreen ? 50.0 : 56.0;
+
+    // Border radius
+    final cardRadius = isSmallScreen ? 20.0 : 24.0;
+    final inputRadius = isSmallScreen ? 12.0 : 14.0;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -107,17 +144,19 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(horizontalPadding),
               child: FadeTransition(
                 opacity: _fadeController,
                 child: SlideTransition(
                   position: _slideAnimation,
                   child: Container(
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    padding: const EdgeInsets.all(32),
+                    constraints: BoxConstraints(
+                      maxWidth: isLargeScreen ? 400 : width * 0.95,
+                    ),
+                    padding: EdgeInsets.all(cardPadding),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(cardRadius),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
@@ -133,7 +172,7 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                         children: [
                           // Logo/Icon
                           Container(
-                            padding: const EdgeInsets.all(20),
+                            padding: EdgeInsets.all(isSmallScreen ? 16.0 : 20.0),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFF7C6FE8), Color(0xFF9B8AFF)],
@@ -147,43 +186,44 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                                 ),
                               ],
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.person_add_rounded,
-                              size: 48,
+                              size: logoIconSize,
                               color: Colors.white,
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: spacing3),
                           Text(
                             'Create Account',
                             style: GoogleFonts.poppins(
-                              fontSize: 28,
+                              fontSize: titleSize,
                               fontWeight: FontWeight.bold,
                               color: const Color(0xFF2C3E50),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: spacing1),
                           Text(
                             'Sign up to get started',
                             style: GoogleFonts.poppins(
-                              fontSize: 14,
+                              fontSize: subtitleSize,
                               color: Colors.grey.shade600,
                             ),
                           ),
-                          const SizedBox(height: 32),
+                          SizedBox(height: spacing4),
 
                           // Email Field
                           TextFormField(
                             controller: _email,
-                            style: GoogleFonts.poppins(fontSize: 15),
+                            style: GoogleFonts.poppins(fontSize: inputFontSize),
                             decoration: InputDecoration(
                               labelText: 'Email',
                               labelStyle: GoogleFonts.poppins(
                                 color: const Color(0xFF7C6FE8),
+                                fontSize: inputFontSize,
                               ),
                               prefixIcon: Container(
-                                margin: const EdgeInsets.all(12),
-                                padding: const EdgeInsets.all(8),
+                                margin: EdgeInsets.all(isSmallScreen ? 10.0 : 12.0),
+                                padding: EdgeInsets.all(isSmallScreen ? 6.0 : 8.0),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
@@ -193,52 +233,57 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                                   ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.email_outlined,
                                   color: Color(0xFF7C6FE8),
-                                  size: 20,
+                                  size: inputIconSize,
                                 ),
                               ),
                               filled: true,
                               fillColor: const Color(0xFFFAFBFF),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(inputRadius),
                                 borderSide: BorderSide.none,
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(inputRadius),
                                 borderSide: BorderSide(
                                   color: const Color(0xFFE8E8F0),
                                   width: 1,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(inputRadius),
                                 borderSide: const BorderSide(
                                   color: Color(0xFF7C6FE8),
                                   width: 2,
                                 ),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 12.0 : 16.0,
+                                vertical: isSmallScreen ? 14.0 : 16.0,
                               ),
                             ),
                             validator: (v) => v == null || !v.contains('@')
                                 ? 'Enter a valid email'
                                 : null,
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: spacing2),
 
                           // Password Field
                           TextFormField(
                             controller: _password,
                             obscureText: _obscurePassword,
-                            style: GoogleFonts.poppins(fontSize: 15),
+                            style: GoogleFonts.poppins(fontSize: inputFontSize),
                             decoration: InputDecoration(
                               labelText: 'Password',
                               labelStyle: GoogleFonts.poppins(
                                 color: const Color(0xFF7C6FE8),
+                                fontSize: inputFontSize,
                               ),
                               prefixIcon: Container(
-                                margin: const EdgeInsets.all(12),
-                                padding: const EdgeInsets.all(8),
+                                margin: EdgeInsets.all(isSmallScreen ? 10.0 : 12.0),
+                                padding: EdgeInsets.all(isSmallScreen ? 6.0 : 8.0),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
@@ -248,10 +293,10 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                                   ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.lock_outline,
                                   color: Color(0xFF7C6FE8),
-                                  size: 20,
+                                  size: inputIconSize,
                                 ),
                               ),
                               suffixIcon: IconButton(
@@ -260,6 +305,7 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                                       ? Icons.visibility_outlined
                                       : Icons.visibility_off_outlined,
                                   color: const Color(0xFF7C6FE8),
+                                  size: inputIconSize,
                                 ),
                                 onPressed: () => setState(
                                         () => _obscurePassword = !_obscurePassword),
@@ -267,43 +313,48 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                               filled: true,
                               fillColor: const Color(0xFFFAFBFF),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(inputRadius),
                                 borderSide: BorderSide.none,
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(inputRadius),
                                 borderSide: BorderSide(
                                   color: const Color(0xFFE8E8F0),
                                   width: 1,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(inputRadius),
                                 borderSide: const BorderSide(
                                   color: Color(0xFF7C6FE8),
                                   width: 2,
                                 ),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 12.0 : 16.0,
+                                vertical: isSmallScreen ? 14.0 : 16.0,
                               ),
                             ),
                             validator: (v) => v == null || v.length < 6
                                 ? 'Min 6 chars'
                                 : null,
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: spacing2),
 
                           // Confirm Password Field
                           TextFormField(
                             controller: _confirmPassword,
                             obscureText: _obscureConfirm,
-                            style: GoogleFonts.poppins(fontSize: 15),
+                            style: GoogleFonts.poppins(fontSize: inputFontSize),
                             decoration: InputDecoration(
                               labelText: 'Confirm Password',
                               labelStyle: GoogleFonts.poppins(
                                 color: const Color(0xFF7C6FE8),
+                                fontSize: inputFontSize,
                               ),
                               prefixIcon: Container(
-                                margin: const EdgeInsets.all(12),
-                                padding: const EdgeInsets.all(8),
+                                margin: EdgeInsets.all(isSmallScreen ? 10.0 : 12.0),
+                                padding: EdgeInsets.all(isSmallScreen ? 6.0 : 8.0),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
@@ -313,10 +364,10 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                                   ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.lock_outline,
                                   color: Color(0xFF7C6FE8),
-                                  size: 20,
+                                  size: inputIconSize,
                                 ),
                               ),
                               suffixIcon: IconButton(
@@ -325,6 +376,7 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                                       ? Icons.visibility_outlined
                                       : Icons.visibility_off_outlined,
                                   color: const Color(0xFF7C6FE8),
+                                  size: inputIconSize,
                                 ),
                                 onPressed: () => setState(
                                         () => _obscureConfirm = !_obscureConfirm),
@@ -332,39 +384,43 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                               filled: true,
                               fillColor: const Color(0xFFFAFBFF),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(inputRadius),
                                 borderSide: BorderSide.none,
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(inputRadius),
                                 borderSide: BorderSide(
                                   color: const Color(0xFFE8E8F0),
                                   width: 1,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(inputRadius),
                                 borderSide: const BorderSide(
                                   color: Color(0xFF7C6FE8),
                                   width: 2,
                                 ),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 12.0 : 16.0,
+                                vertical: isSmallScreen ? 14.0 : 16.0,
                               ),
                             ),
                             validator: (v) => v != _password.text
                                 ? 'Passwords do not match'
                                 : null,
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: spacing3),
 
                           // Sign Up Button
                           Container(
                             width: double.infinity,
-                            height: 56,
+                            height: buttonHeight,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFF7C6FE8), Color(0xFF9B8AFF)],
                               ),
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(inputRadius),
                               boxShadow: [
                                 BoxShadow(
                                   color: const Color(0xFF7C6FE8).withOpacity(0.3),
@@ -377,12 +433,12 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                               color: Colors.transparent,
                               child: InkWell(
                                 onTap: _loading ? null : _register,
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(inputRadius),
                                 child: Center(
                                   child: _loading
-                                      ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
+                                      ? SizedBox(
+                                    width: isSmallScreen ? 20.0 : 24.0,
+                                    height: isSmallScreen ? 20.0 : 24.0,
                                     child: CircularProgressIndicator(
                                       color: Colors.white,
                                       strokeWidth: 2,
@@ -391,7 +447,7 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                                       : Text(
                                     'Sign Up',
                                     style: GoogleFonts.poppins(
-                                      fontSize: 16,
+                                      fontSize: buttonTextSize,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
                                     ),
@@ -400,7 +456,7 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: spacing2),
 
                           // Sign In Link
                           Row(
@@ -409,7 +465,7 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                               Text(
                                 'Already have an account? ',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 14,
+                                  fontSize: linkTextSize,
                                   color: Colors.grey.shade600,
                                 ),
                               ),
@@ -426,7 +482,7 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                                 child: Text(
                                   'Sign In',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 14,
+                                    fontSize: linkTextSize,
                                     fontWeight: FontWeight.w600,
                                     color: const Color(0xFF7C6FE8),
                                   ),
