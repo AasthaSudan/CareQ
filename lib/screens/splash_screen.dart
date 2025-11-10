@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-import 'package:care_q/screens/dashboard/patient_dashboard.dart';
-import 'package:care_q/screens/register_screen.dart';
-import 'package:care_q/screens/queue_screen.dart';
-import 'package:care_q/screens/room_assignment_screen.dart';
-import 'package:care_q/screens/profile_screen.dart';
 import 'package:care_q/screens/auth/login_screen.dart';
-import '../services/openai_service.dart';
 import 'main_navigator.dart';
 
-/// ------------------ SPLASH SCREEN ------------------
 class SplashScreen extends StatefulWidget {
   static const routeName = '/splash';
   const SplashScreen({Key? key}) : super(key: key);
@@ -35,7 +26,6 @@ class _SplashScreenState extends State<SplashScreen>
     _controller =
         AnimationController(vsync: this, duration: const Duration(seconds: 2));
 
-    // Staggered Animations
     _fade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.4)),
     );
