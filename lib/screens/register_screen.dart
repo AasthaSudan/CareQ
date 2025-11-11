@@ -649,7 +649,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
     );
   }
 
-  // ---------------- GENDER DROPDOWN ----------------
   Widget _buildGenderDropdown(double width) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: width * 0.03),
@@ -668,7 +667,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
     );
   }
 
-  // ---------------- VITAL CARD ----------------
   Widget _buildVitalCard({
     required TextEditingController controller,
     required String label,
