@@ -1209,7 +1209,6 @@ class _QueueScreenState extends State<QueueScreen> with TickerProviderStateMixin
   }
 }
 
-// AI Chatbot Screen
 class AIChatbotScreen extends StatefulWidget {
   final OpenAIService aiService;
   const AIChatbotScreen({Key? key, required this.aiService}) : super(key: key);
