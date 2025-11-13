@@ -3,19 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-
-// Providers
 import 'providers/auth_provider.dart';
 import 'providers/patient_provider.dart';
 import 'providers/room_provider.dart';
 import 'providers/theme_provider.dart';
-
-// Screens
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/sign_up_screen.dart';
-
-// Theme
 import 'theme.dart';
 
 Future<void> main() async {
