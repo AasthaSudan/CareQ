@@ -482,7 +482,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
     );
   }
 
-  // ---------------- VITALS ----------------
   Widget _buildVitalsSection(double width) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,7 +542,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
     );
   }
 
-  // ---------------- PRIORITY ----------------
   Widget _buildPriorityBadge(double width) {
     return Center(
       child: ValueListenableBuilder<String>(
@@ -596,7 +594,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
     );
   }
 
-  // ---------------- REGISTER BUTTON ----------------
   Widget _buildRegisterButton(double width, double height) {
     return SizedBox(
       width: double.infinity,
@@ -616,7 +613,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
     );
   }
 
-  // ---------------- TEXTFIELD ----------------
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -706,7 +702,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
     );
   }
 
-  // ---------------- HELPER ----------------
   String _getSymptomLabel(String key) {
     switch (key) {
       case 'chest_pain':
