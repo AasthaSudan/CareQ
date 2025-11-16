@@ -204,10 +204,8 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
             ),
           );
 
-          // Refresh the patient list
           await provider.refreshQueue();
 
-          // Go back to previous screen
           Navigator.pop(context);
         }
       } else {
@@ -227,7 +225,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
       print('Error registering patient: $e');
       print('Stack trace: $stackTrace');
 
-      // Close loading dialog if still open
       if (mounted) Navigator.pop(context);
 
       if (mounted) {
@@ -295,8 +292,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
       ),
     );
   }
-
-  // ------------------ WIDGETS ------------------
 
   Widget _buildProfilePhotoCard(double width) {
     return Center(
@@ -372,7 +367,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
     );
   }
 
-  // ---------------- PERSONAL INFO ----------------
   Widget _buildPersonalInfoSection(double width) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,7 +409,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
     );
   }
 
-  // ---------------- SYMPTOMS ----------------
   Widget _buildSymptomsSection(double width) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -701,7 +694,7 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
       ),
     );
   }
-
+2
   String _getSymptomLabel(String key) {
     switch (key) {
       case 'chest_pain':
