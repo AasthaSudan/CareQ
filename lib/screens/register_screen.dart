@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-
-import '../models/patient_model.dart';
 import '../models/vital_signs.dart';
 import '../providers/patient_provider.dart';
 import '../utils/priority_calculator.dart';
@@ -17,7 +15,6 @@ class RegisterPatientScreen extends StatefulWidget {
 class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -75,7 +72,6 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
   void _calculatePriority() {
     if (_pulseController.text.isEmpty || _tempController.text.isEmpty || _spo2Controller.text.isEmpty) return;
 
-    // Fixed: Better blood pressure parsing
     double? bloodPressure;
     if (_bpController.text.isNotEmpty && _bpController.text.contains('/')) {
       final parts = _bpController.text.split('/');
