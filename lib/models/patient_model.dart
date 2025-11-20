@@ -49,7 +49,7 @@ class PatientModel {
     String? address,
     String? emergencyLevel,
     String? symptoms,
-    Map<String, bool>? symptomChecks,  // Make sure this is optional
+    Map<String, bool>? symptomChecks,
     VitalSigns? vitals,
     List<String>? reports,
     String? photoUrl,
