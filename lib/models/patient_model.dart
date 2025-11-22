@@ -9,7 +9,7 @@ class PatientModel {
   final String address;
   final String emergencyLevel;
   final String symptoms;
-  final Map<String, bool> symptomChecks;  // Changed to Map<String, bool>
+  final Map<String, bool> symptomChecks;
   final VitalSigns vitals;
   final List<String> reports;
   final String? photoUrl;
@@ -39,7 +39,6 @@ class PatientModel {
     required this.priority,
   });
 
-  // CopyWith method for updating fields in an existing PatientModel
   PatientModel copyWith({
     String? id,
     String? name,
@@ -68,7 +67,7 @@ class PatientModel {
       address: address ?? this.address,
       emergencyLevel: emergencyLevel ?? this.emergencyLevel,
       symptoms: symptoms ?? this.symptoms,
-      symptomChecks: symptomChecks ?? this.symptomChecks,  // Default to current symptomChecks if not provided
+      symptomChecks: symptomChecks ?? this.symptomChecks,
       vitals: vitals ?? this.vitals,
       reports: reports ?? this.reports,
       photoUrl: photoUrl ?? this.photoUrl,
@@ -80,7 +79,6 @@ class PatientModel {
     );
   }
 
-  // From Map method to create a PatientModel from a Firestore document
   factory PatientModel.fromMap(Map<String, dynamic> map, String id) {
     return PatientModel(
       id: id,
@@ -103,7 +101,6 @@ class PatientModel {
     );
   }
 
-  // To Map method for converting a PatientModel into a Firestore document
   Map<String, dynamic> toMap() {
     return {
       'name': name,
