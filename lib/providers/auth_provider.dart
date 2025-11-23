@@ -6,7 +6,7 @@ class AuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  bool _loading = true; // start true while checking auth
+  bool _loading = true;
   bool get loading => _loading;
 
   User? get currentUser => _auth.currentUser;
@@ -64,7 +64,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // SIGN IN
+
   Future<void> signIn(String email, String password) async {
     _loading = true;
     notifyListeners();
@@ -76,7 +76,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // SIGN OUT
   Future<void> signOut() async {
     await _auth.signOut();
     _userName = null;

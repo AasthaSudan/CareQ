@@ -690,7 +690,7 @@ class _RegisterPatientScreenState extends State<RegisterPatientScreen> {
       ),
     );
   }
-2
+
   String _getSymptomLabel(String key) {
     switch (key) {
       case 'chest_pain':
